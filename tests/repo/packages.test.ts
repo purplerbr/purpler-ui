@@ -4,9 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { expectedExports, kebabCase, syncExports } from '../../packages/ui/scripts/exports';
 import { ROOT, isRecord, read, readJson } from './helpers';
 
+// The tokens package also ships the OFL fonts, so its SPDX expression names both licenses.
 const PUBLIC_PACKAGES = [
-  { dir: 'packages/tokens', name: '@purplerbr/tokens' },
-  { dir: 'packages/ui', name: '@purplerbr/ui' },
+  { dir: 'packages/tokens', name: '@purplerbr/tokens', license: 'MIT AND OFL-1.1' },
+  { dir: 'packages/ui', name: '@purplerbr/ui', license: 'MIT' },
 ] as const;
 
 function manifestOf(dir: string): Record<string, unknown> {
@@ -15,13 +16,13 @@ function manifestOf(dir: string): Record<string, unknown> {
   return manifest;
 }
 
-describe.each(PUBLIC_PACKAGES)('$name', ({ dir, name }) => {
+describe.each(PUBLIC_PACKAGES)('$name', ({ dir, name, license }) => {
   const manifest = manifestOf(dir);
 
-  it('publishes only dist/ to GitHub Packages, under the MIT license', () => {
+  it('publishes only dist/ to GitHub Packages, under its SPDX license', () => {
     expect(manifest).toMatchObject({
       name,
-      license: 'MIT',
+      license,
       type: 'module',
       files: ['dist'],
       sideEffects: ['**/*.css'],

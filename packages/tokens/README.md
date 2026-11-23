@@ -63,4 +63,4 @@ Bricolage Grotesque e Figtree (marca) e Inter, Montserrat, Nunito, Lora e Space 
 
 ## Licença
 
-[MIT](LICENSE)
+`MIT AND OFL-1.1`: o código e os tokens são [MIT](LICENSE); as fontes em `dist/fonts` são SIL Open Font License 1.1, com a licença de cada família ao lado dos arquivos.

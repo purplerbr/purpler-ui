@@ -2,7 +2,7 @@
   "name": "@purplerbr/tokens",
   "version": "0.0.0",
   "description": "Paleta, tokens e temas da Purpler (CSS e TypeScript, sem dependências).",
-  "license": "MIT",
+  "license": "MIT AND OFL-1.1",
   "type": "module",
   "repository": {
     "type": "git",
