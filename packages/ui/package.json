@@ -28,6 +28,14 @@
       "types": "./dist/atoms/Button/index.d.ts",
       "import": "./dist/atoms/Button/index.js"
     },
+    "./checkbox": {
+      "types": "./dist/atoms/Checkbox/index.d.ts",
+      "import": "./dist/atoms/Checkbox/index.js"
+    },
+    "./alert": {
+      "types": "./dist/molecules/Alert/index.d.ts",
+      "import": "./dist/molecules/Alert/index.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
