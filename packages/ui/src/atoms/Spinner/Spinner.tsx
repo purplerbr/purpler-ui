@@ -11,6 +11,7 @@ export type SpinnerProps = ComponentProps<'span'> &
     showLabel?: boolean;
   };
 
+/** For lazy route chunks (the `<Suspense>` fallback); data screens use `Skeleton` (§7.2). */
 export function Spinner({
   className,
   size,
@@ -22,7 +23,11 @@ export function Spinner({
     <span
       data-slot="spinner"
       role="status"
-      className={cn('inline-flex items-center gap-2 font-sans text-small', className)}
+      className={cn(
+        'inline-flex items-center gap-2 font-sans',
+        size === 'lg' ? 'text-body' : 'text-small',
+        className
+      )}
       {...props}
     >
       <LoaderCircle aria-hidden="true" className={spinnerVariants({ size })} />

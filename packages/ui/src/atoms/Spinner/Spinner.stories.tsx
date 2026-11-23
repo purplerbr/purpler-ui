@@ -20,6 +20,14 @@ const meta = {
         'Mostra o texto ao lado do anel. Com movimento reduzido, o anel para e o texto aparece sempre',
     },
   },
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Para o carregamento de rotas (o `fallback` do `<Suspense>` enquanto o chunk da página chega). Telas com dados mostram `Skeleton` no lugar do conteúdo (§7.2), não um `Spinner`.',
+      },
+    },
+  },
 } satisfies Meta<typeof Spinner>;
 
 export default meta;
