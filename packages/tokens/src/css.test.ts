@@ -150,17 +150,18 @@ describe('renderStoreThemeCss', () => {
     );
   });
 
-  it('never derives or writes the Purpler logo colors', () => {
+  it('never derives or writes the Purpler logo or skeleton colors', () => {
     const smuggled = {
       ...theme,
-      light: { ...theme.light, 'brand-mark': theme.light.primary },
-      dark: { ...theme.dark, 'brand-wordmark': theme.dark.primary },
+      light: { ...theme.light, 'brand-mark': theme.light.primary, skeleton: '#ff0000' },
+      dark: { ...theme.dark, 'brand-wordmark': theme.dark.primary, skeleton: '#ff0000' },
     };
+    const css = renderStoreThemeCss(smuggled);
 
     expect(Object.keys(theme.light)).not.toContain('brand-mark');
-    expect(renderStoreThemeCss(smuggled)).not.toMatch(/--brand-(mark|wordmark)/);
     expect(Object.keys(theme.light)).not.toContain('skeleton');
-    expect(renderStoreThemeCss(theme)).not.toContain('--skeleton');
+    expect(css).not.toMatch(/--brand-(mark|wordmark)/);
+    expect(css).not.toContain('skeleton');
   });
 
   it('writes the canonical color, not the padded value it validated', () => {
