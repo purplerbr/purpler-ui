@@ -8,6 +8,7 @@ import {
   SEMANTIC_TOKENS,
   brandLogo,
   semantic,
+  skeleton,
   type SemanticToken,
 } from './semantic';
 import { shadow, type ShadowStep } from './shadow';
@@ -36,6 +37,7 @@ const brandColors = (scheme: 'light' | 'dark'): Declarations => ({
   ...Object.fromEntries(
     BRAND_LOGO_TOKENS.map((token) => [`--${token}`, brandLogo[scheme][token].oklch])
   ),
+  '--skeleton': skeleton[scheme].oklch,
 });
 
 const elevationVariables = (scheme: 'light' | 'dark'): Declarations =>
@@ -82,7 +84,7 @@ export function renderThemeCss(): string {
   const theme = {
     '--color-*': 'initial',
     ...Object.fromEntries(
-      [...SEMANTIC_TOKENS, ...BRAND_LOGO_TOKENS].map((token) => [
+      [...SEMANTIC_TOKENS, ...BRAND_LOGO_TOKENS, 'skeleton'].map((token) => [
         `--color-${token}`,
         `var(--${token})`,
       ])

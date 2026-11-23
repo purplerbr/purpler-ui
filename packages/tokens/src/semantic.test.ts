@@ -4,10 +4,13 @@ import {
   BRAND_LOGO_TOKENS,
   SEMANTIC_PAIRS,
   SEMANTIC_TOKENS,
+  SKELETON_MINIMUM,
   brandLogo,
   semantic,
+  skeleton,
   type ColorScheme,
 } from './semantic';
+import { STORE_THEME_PRESETS, buildStoreTheme } from './storeTheme';
 
 const CASES = (['light', 'dark'] as const).flatMap((scheme: ColorScheme) =>
   SEMANTIC_PAIRS.map((pair) => ({ scheme, ...pair }))
@@ -43,6 +46,38 @@ describe('semantic contrast (WCAG 2.2 AA)', () => {
 
       expect(contrastRatio(surface.oklch, color.oklch)).toBeGreaterThanOrEqual(CONTRAST_MINIMUM.ui);
       expect(contrastRatio(surface.hex, color.hex)).toBeGreaterThanOrEqual(CONTRAST_MINIMUM.ui);
+    }
+  );
+
+  const SKELETON_CASES = (['light', 'dark'] as const).flatMap((scheme) =>
+    (['background', 'card'] as const).map((surface) => ({ scheme, surface }))
+  );
+
+  it.each(SKELETON_CASES)(
+    '$scheme · skeleton stands out from $surface by at least 1.3:1',
+    ({ scheme, surface }) => {
+      const background = semantic[scheme][surface];
+
+      expect(contrastRatio(background.oklch, skeleton[scheme].oklch)).toBeGreaterThanOrEqual(
+        SKELETON_MINIMUM
+      );
+      expect(contrastRatio(background.hex, skeleton[scheme].hex)).toBeGreaterThanOrEqual(
+        SKELETON_MINIMUM
+      );
+    }
+  );
+
+  // The store theme keeps the Purpler skeleton, so it must stand out on every preset surface too.
+  it.each(STORE_THEME_PRESETS.map(({ id, input }) => ({ id, theme: buildStoreTheme(input) })))(
+    'store preset $id · skeleton stands out from background and card by at least 1.3:1',
+    ({ theme }) => {
+      for (const scheme of ['light', 'dark'] as const) {
+        for (const surface of ['background', 'card'] as const) {
+          expect(
+            contrastRatio(theme[scheme][surface], skeleton[scheme].oklch)
+          ).toBeGreaterThanOrEqual(SKELETON_MINIMUM);
+        }
+      }
     }
   );
 

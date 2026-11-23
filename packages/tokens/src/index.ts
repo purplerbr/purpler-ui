@@ -25,8 +25,10 @@ export {
   BRAND_LOGO_TOKENS,
   SEMANTIC_PAIRS,
   SEMANTIC_TOKENS,
+  SKELETON_MINIMUM,
   brandLogo,
   semantic,
+  skeleton,
 } from './semantic';
 export type {
   BrandLogoToken,
