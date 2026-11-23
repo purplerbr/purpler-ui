@@ -152,6 +152,15 @@ export const brandLogo: Readonly<
   dark: { 'brand-mark': ref('brand', 300), 'brand-wordmark': ref('neutral', 50) },
 };
 
+/** Minimum ratio of `skeleton` on `background` and `card`: decorative separation, not a WCAG target. */
+export const SKELETON_MINIMUM = 1.3;
+
+/** Loading placeholder color. Kept out of the store theme, like the logo; `muted` was too close to the page. */
+export const skeleton: Readonly<Record<ColorScheme, SemanticColor>> = {
+  light: ref('neutral', 300),
+  dark: ref('neutral', 700),
+};
+
 export interface SemanticPair {
   level: ContrastLevel;
   background: SemanticToken;
