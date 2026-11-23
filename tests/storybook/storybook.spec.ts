@@ -16,6 +16,7 @@ const BUTTON_STORIES = [
   'atoms-button--default',
   'atoms-button--loading',
 ] as const;
+const FORM_STORIES = ['atoms-checkbox--all-variants', 'molecules-alert--all-variants'] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
@@ -47,7 +48,7 @@ const AXE_WIDTHS = [1280, 360] as const;
 
 for (const width of AXE_WIDTHS) {
   for (const scheme of SCHEMES) {
-    for (const id of [...FOUNDATIONS, ...BUTTON_STORIES]) {
+    for (const id of [...FOUNDATIONS, ...BUTTON_STORIES, ...FORM_STORIES]) {
       test(`${id} in ${scheme} at ${String(width)}px renders with the brand fonts and no WCAG violations`, async ({
         page,
       }, info) => {
@@ -127,6 +128,27 @@ test('the button is reachable with Tab and shows a 2px focus outline in the ring
     return { style: style.outlineStyle, width: style.outlineWidth };
   });
   expect(outline).toEqual({ style: 'solid', width: '2px' });
+});
+
+test('the checkbox is reachable with Tab, toggles with Space and shows the focus outline', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'atoms-checkbox--default', 'scheme:light');
+  const checkbox = page.getByRole('checkbox', { name: 'Li e aceito os termos de uso' });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(checkbox).toBeFocused();
+  const outline = await checkbox.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { style: style.outlineStyle, width: style.outlineWidth };
+  });
+  expect(outline).toEqual({ style: 'solid', width: '2px' });
+
+  await page.keyboard.press('Space');
+  await expect(checkbox).toBeChecked();
+  await page.getByText('Li e aceito os termos de uso').click();
+  await expect(checkbox).not.toBeChecked();
 });
 
 test('the loading button keeps the focus and ignores Enter', async ({ page, browserName }) => {
