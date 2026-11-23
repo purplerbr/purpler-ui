@@ -1,0 +1,94 @@
+name: Release
+
+# Publishes to GitHub Packages only after a merge in main, once every gate of the CI passed.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    name: Setup
+    uses: ./.github/workflows/setup.yml
+
+  lint:
+    name: Lint
+    needs: setup
+    uses: ./.github/workflows/lint.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+
+  typecheck:
+    name: Typecheck
+    needs: setup
+    uses: ./.github/workflows/typecheck.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+
+  test:
+    name: Test
+    needs: [setup, lint, typecheck]
+    uses: ./.github/workflows/test.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+
+  build:
+    name: Build
+    needs: [setup, test]
+    uses: ./.github/workflows/build.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+
+  security:
+    name: Security
+    uses: ./.github/workflows/security.yml
+
+  publish:
+    name: Publish to GitHub Packages
+    needs: [setup, lint, typecheck, test, build, security]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Restore node_modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # Versions are bumped in a release PR (yarn changeset version); pending changesets mean "not yet".
+      - name: Pending changesets
+        id: changesets
+        run: |
+          pending=$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' | wc -l | tr -d ' ')
+          echo "pending=${pending}" >> "$GITHUB_OUTPUT"
+          if [ "${pending}" != "0" ]; then
+            echo "::notice::${pending} changeset(s) pending. Run yarn changeset version in a release PR; nothing was published."
+          fi
+
+      - name: Build, check the package contents and publish
+        if: steps.changesets.outputs.pending == '0'
+        run: yarn release
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ github.token }}
