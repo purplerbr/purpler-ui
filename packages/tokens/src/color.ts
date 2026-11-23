@@ -19,7 +19,9 @@ export const WHITE = 'oklch(1 0 0)';
 export const BLACK = 'oklch(0 0 0)';
 
 const HEX_PATTERN = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
-const OKLCH_PATTERN = /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)$/;
+// One unsigned decimal per channel: `1.2.3` or a lone `.` never match.
+const NUMBER = String.raw`(\d+(?:\.\d+)?|\.\d+)`;
+const OKLCH_PATTERN = new RegExp(String.raw`^oklch\(\s*${NUMBER}\s+${NUMBER}\s+${NUMBER}\s*\)$`);
 const GAMUT_EPSILON = 1e-4;
 
 const toLinear = (c: number): number => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
@@ -27,6 +29,12 @@ const toGamma = (c: number): number =>
   c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
 const clamp01 = (c: number): number => Math.min(1, Math.max(0, c));
 const mapRgb = ([r, g, b]: Rgb, fn: (channel: number) => number): Rgb => [fn(r), fn(g), fn(b)];
+
+// Values can come from storage or the network, so the type is checked at runtime too.
+function requireString(value: unknown): string {
+  if (typeof value !== 'string') throw new TypeError(`Unsupported color: ${String(value)}`);
+  return value;
+}
 
 function parseHex(value: string): Rgb | null {
   const match = HEX_PATTERN.exec(value.trim());
@@ -37,12 +45,14 @@ function parseHex(value: string): Rgb | null {
   return [channel(0), channel(2), channel(4)];
 }
 
-/** Parses `oklch(L C H)` with L in 0–1; returns null for any other syntax. */
-export function parseOklch(value: string): Oklch | null {
+/** Parses `oklch(L C H)` with L in 0–1; returns null for any other syntax or value. */
+export function parseOklch(value: unknown): Oklch | null {
+  if (typeof value !== 'string') return null;
   const match = OKLCH_PATTERN.exec(value.trim());
   if (!match) return null;
   const [l, c, h] = match.slice(1).map(Number);
-  if (l === undefined || c === undefined || h === undefined || l > 1) return null;
+  if (l === undefined || c === undefined || h === undefined) return null;
+  if (![l, c, h].every(Number.isFinite) || l > 1) return null;
   return { l, c, h };
 }
 
@@ -77,7 +87,8 @@ export function isInSrgbGamut(color: Oklch): boolean {
   return oklchToLinearRgb(color).every((c) => c >= -GAMUT_EPSILON && c <= 1 + GAMUT_EPSILON);
 }
 
-function toLinearRgb(value: string): Rgb {
+function toLinearRgb(input: unknown): Rgb {
+  const value = requireString(input);
   const rgb = parseHex(value);
   if (rgb) return mapRgb(rgb, toLinear);
   const oklch = parseOklch(value);
@@ -87,7 +98,7 @@ function toLinearRgb(value: string): Rgb {
 
 /** Converts `#rrggbb`, `#rgb` or `oklch(L C H)` to OKLCH; throws on any other input. */
 export function toOklch(value: string): Oklch {
-  return parseOklch(value) ?? linearRgbToOklch(toLinearRgb(value));
+  return parseOklch(requireString(value)) ?? linearRgbToOklch(toLinearRgb(value));
 }
 
 export function toHex(value: string): string {
