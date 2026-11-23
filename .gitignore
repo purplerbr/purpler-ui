@@ -31,3 +31,9 @@ storybook-static/
 !.yarn/releases
 !.yarn/plugins
 .pnp.*
+
+# Pacotes gerados por pack
+*.tgz
+
+# Saída temporária do shadcn CLI (mover para a pasta atômica antes de commitar)
+packages/ui/src/generated/

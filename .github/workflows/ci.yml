@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+# One group per PR, so a new push cancels the old run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Setup
+    uses: ./.github/workflows/setup.yml
+
+  lint:
+    name: Lint
+    needs: setup
+    uses: ./.github/workflows/lint.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+
+  typecheck:
+    name: Typecheck
+    needs: setup
+    uses: ./.github/workflows/typecheck.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+
+  test:
+    name: Test
+    needs: [setup, lint, typecheck]
+    uses: ./.github/workflows/test.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+
+  build:
+    name: Build
+    needs: [setup, test]
+    uses: ./.github/workflows/build.yml
+    with:
+      cache-key: ${{ needs.setup.outputs.cache-key }}
+
+  security:
+    name: Security
+    uses: ./.github/workflows/security.yml

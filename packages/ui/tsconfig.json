@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2024", "dom"],
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@purplerbr/tokens": ["../tokens/src/index.ts"]
+    }
+  },
+  "include": ["src", "test", ".storybook/*.ts", ".storybook/*.tsx", "scripts", "tsup.config.ts"]
+}

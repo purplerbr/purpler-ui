@@ -1,0 +1,7 @@
+@import 'tailwindcss';
+@import '@purplerbr/tokens/fonts.css';
+@import '@purplerbr/tokens/tokens.css';
+@import '@purplerbr/tokens/theme.css';
+@import '../src/styles.css';
+
+@source '../src';

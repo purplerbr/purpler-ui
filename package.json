@@ -1,0 +1,55 @@
+{
+  "name": "purpler-ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "yarn@4.13.0",
+  "engines": {
+    "node": "24.x"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "postinstall": "husky",
+    "build": "yarn workspaces foreach --all --topological --no-private run build",
+    "lint": "eslint . --fix",
+    "lint:ci": "eslint . --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.json && yarn workspaces foreach --all --no-private run typecheck",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:storybook": "playwright test",
+    "storybook": "yarn workspace @purplerbr/ui storybook",
+    "build-storybook": "yarn workspace @purplerbr/ui build-storybook",
+    "pack:check": "node scripts/checkPack.ts",
+    "changeset": "changeset",
+    "release": "changeset publish --no-git-tag"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@changesets/cli": "~3.0.3",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "~1.64.1",
+    "@types/node": "^24.19.2",
+    "@vitest/coverage-v8": "~4.1.12",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-sonarjs": "^4.2.2",
+    "eslint-plugin-storybook": "~10.6.8",
+    "globals": "^17.14.0",
+    "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
+    "lint-staged": "^17.6.2",
+    "prettier": "~3.8.5",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "~4.1.12",
+    "yaml": "^2.9.1"
+  }
+}

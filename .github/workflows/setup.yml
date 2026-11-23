@@ -1,0 +1,48 @@
+name: Setup
+
+on:
+  workflow_call:
+    outputs:
+      cache-key:
+        description: Cache key of node_modules
+        value: ${{ jobs.setup.outputs.cache-key }}
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    name: Install dependencies
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Compute cache key
+        id: cache-key
+        run: echo "key=${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock', '.yarnrc.yml', 'package.json', 'packages/*/package.json') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache node_modules
+        id: cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ steps.cache-key.outputs.key }}
+
+      - name: Install
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: yarn install --immutable
+        env:
+          HUSKY: '0'
