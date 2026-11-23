@@ -7,7 +7,7 @@ export type AuthLayoutProps = ComponentProps<'div'> & {
   footer?: ReactNode;
 };
 
-// Paths of src/assets/brand/logo-mono.svg, filled with tokens instead of the file's literal colors.
+// Paths of src/assets/brand/logo-mono.svg, filled with the fixed logo tokens (store themes never change them).
 const SYMBOL_PATH =
   'M3.06 10.71L12.62 1.15Q13.76 0 15.29 0L24.47 0Q26 0 26 1.53L26 10.71Q26 12.24 24.85 13.38L15.29 22.94Q12.24 26 9.18 22.94L3.06 16.82Q0 13.76 3.06 10.71ZM23.72 5.2A2.92 2.92 0 1 0 17.88 5.2A2.92 2.92 0 1 0 23.72 5.2Z';
 const WORDMARK_PATH =
@@ -16,8 +16,8 @@ const WORDMARK_PATH =
 function PurplerLogo() {
   return (
     <svg viewBox="0 0 134.61 26" role="img" aria-label="Purpler" className="h-8 w-auto">
-      <path className="fill-primary" fillRule="evenodd" d={SYMBOL_PATH} />
-      <path className="fill-foreground" d={WORDMARK_PATH} />
+      <path className="fill-brand-mark" fillRule="evenodd" d={SYMBOL_PATH} />
+      <path className="fill-brand-wordmark" d={WORDMARK_PATH} />
     </svg>
   );
 }
@@ -34,7 +34,7 @@ export function AuthLayout({ className, children, footer, ...props }: AuthLayout
       {footer ? (
         <footer
           data-slot="auth-layout-footer"
-          className="max-w-md text-center text-small text-muted-foreground [&_a]:rounded-xs [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-2 [&_a]:focus-visible:outline-ring"
+          className="max-w-md text-center text-balance text-small text-muted-foreground [&_a]:rounded-xs [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:whitespace-nowrap [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-offset-2 [&_a]:focus-visible:outline-ring"
         >
           {footer}
         </footer>

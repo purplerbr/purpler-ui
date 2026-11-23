@@ -40,9 +40,7 @@ const callback = (
       </CardTitle>
     </CardHeader>
     <CardContent>
-      <Text tone="muted" aria-live="polite">
-        Estamos confirmando seu acesso. Isso leva só um instante.
-      </Text>
+      <Text tone="muted">Estamos confirmando seu acesso. Isso leva só um instante.</Text>
     </CardContent>
   </Card>
 );
@@ -51,7 +49,15 @@ const meta = {
   title: 'Templates/AuthLayout',
   component: AuthLayout,
   tags: ['autodocs'],
-  parameters: { layout: 'fullscreen' },
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        component:
+          'Página de login das superfícies da Purpler (painel e site), sempre com a marca Purpler. Não use no `/entrar` da loja, que leva a marca do lojista.',
+      },
+    },
+  },
   args: { children: signIn, footer: legal },
   argTypes: {
     children: { control: false, description: 'Conteúdo da página, em geral um `Card` com o `h1`' },
