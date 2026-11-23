@@ -13,6 +13,8 @@ const STORIES = [
   'fundamentos-voz--voz',
   'atoms-button--default',
   'atoms-button--all-variants',
+  'atoms-checkbox--all-variants',
+  'molecules-alert--all-variants',
 ] as const;
 // WebKit lacks requestIdleCallback, which the Storybook manager calls; it is not the library's.
 const KNOWN_ERROR = /requestIdleCallback/;
@@ -86,5 +88,50 @@ test('switches between light and dark from the toolbar', async ({ page }, info) 
   await page.getByRole('option', { name: 'Claro' }).click();
   await expect(preview.locator('html')).not.toHaveClass(/\bdark\b/);
   await page.screenshot({ path: shot(info.project.name, 'toolbar-light') });
+  expect(problems).toEqual({ errors: [], badRequests: [] });
+});
+
+test('renders the Checkbox and Alert in light and dark at phone and desktop width', async ({
+  page,
+}, info) => {
+  const problems = watch(page);
+  for (const width of [360, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const scheme of ['light', 'dark']) {
+      for (const id of ['atoms-checkbox--all-variants', 'molecules-alert--all-variants']) {
+        await page.goto(`${PAGES_URL}iframe.html?id=${id}&viewMode=story&globals=scheme:${scheme}`);
+        await expect(page.locator('#storybook-root > *').first()).toBeVisible(MANAGER_LOAD);
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - window.innerWidth
+        );
+        expect(overflow, `${id} ${scheme} ${String(width)}`).toBeLessThanOrEqual(0);
+        await page.screenshot({
+          path: shot(info.project.name, `${id}-${scheme}-${String(width)}`),
+          fullPage: true,
+        });
+      }
+    }
+  }
+  expect(problems).toEqual({ errors: [], badRequests: [] });
+});
+
+test('the published Checkbox takes Tab focus and toggles with Space', async ({
+  page,
+  browserName,
+}, info) => {
+  const problems = watch(page);
+  await page.goto(`${PAGES_URL}iframe.html?id=atoms-checkbox--default&viewMode=story`);
+  const checkbox = page.getByRole('checkbox', { name: 'Li e aceito os termos de uso' });
+  await expect(checkbox).toBeVisible(MANAGER_LOAD);
+
+  // Safari skips buttons on Tab unless Full Keyboard Access is on.
+  await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
+  await expect(checkbox).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(checkbox).toBeChecked();
+  await page.screenshot({ path: shot(info.project.name, 'checkbox-focused-checked') });
+  expect(await checkbox.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe(
+    'solid'
+  );
   expect(problems).toEqual({ errors: [], badRequests: [] });
 });
