@@ -141,6 +141,17 @@ export const semantic: Readonly<Record<ColorScheme, SemanticTokens>> = {
   },
 };
 
+export const BRAND_LOGO_TOKENS = ['brand-mark', 'brand-wordmark'] as const;
+export type BrandLogoToken = (typeof BRAND_LOGO_TOKENS)[number];
+
+/** Purpler logo colors (Etiqueta files). Kept out of SEMANTIC_TOKENS so a store theme never changes them. */
+export const brandLogo: Readonly<
+  Record<ColorScheme, Readonly<Record<BrandLogoToken, SemanticColor>>>
+> = {
+  light: { 'brand-mark': ref('brand', 600), 'brand-wordmark': ref('brand', 950) },
+  dark: { 'brand-mark': ref('brand', 300), 'brand-wordmark': ref('neutral', 50) },
+};
+
 export interface SemanticPair {
   level: ContrastLevel;
   background: SemanticToken;

@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { renderFontsCss, renderStoreThemeCss, renderThemeCss, renderTokensCss } from './css';
 import { FONT_FAMILIES, listFontFaces } from './fonts';
-import { SEMANTIC_TOKENS, semantic } from './semantic';
+import { BRAND_LOGO_TOKENS, SEMANTIC_TOKENS, brandLogo, semantic } from './semantic';
 import { buildStoreTheme, type StoreColors, type StoreTheme } from './storeTheme';
 
 // Simulates data from storage or the network, which the compiler cannot check.
@@ -28,6 +28,11 @@ describe('tokens.css', () => {
       expect(dark).toContain(`  --${token}: ${semantic.dark[token].oklch};`);
     }
   );
+
+  it.each(BRAND_LOGO_TOKENS)('declares the logo color --%s in light and dark', (token) => {
+    expect(light).toContain(`  --${token}: ${brandLogo.light[token].oklch};`);
+    expect(dark).toContain(`  --${token}: ${brandLogo.dark[token].oklch};`);
+  });
 
   it('declares radius, fonts, elevation and motion once, in :root', () => {
     expect(light).toContain('  --radius: 0.875rem;');
@@ -55,9 +60,12 @@ describe('theme.css', () => {
     );
   });
 
-  it.each(SEMANTIC_TOKENS)('maps --color-%s to its variable', (token) => {
-    expect(css).toContain(`  --color-${token}: var(--${token});`);
-  });
+  it.each([...SEMANTIC_TOKENS, ...BRAND_LOGO_TOKENS])(
+    'maps --color-%s to its variable',
+    (token) => {
+      expect(css).toContain(`  --color-${token}: var(--${token});`);
+    }
+  );
 
   it.each([
     'color',
@@ -135,6 +143,17 @@ describe('renderStoreThemeCss', () => {
     expect(blockOf(css, ".dark,\n[data-theme='dark']")).toContain(
       `  --primary: ${theme.dark.primary};`
     );
+  });
+
+  it('never derives or writes the Purpler logo colors', () => {
+    const smuggled = {
+      ...theme,
+      light: { ...theme.light, 'brand-mark': theme.light.primary },
+      dark: { ...theme.dark, 'brand-wordmark': theme.dark.primary },
+    };
+
+    expect(Object.keys(theme.light)).not.toContain('brand-mark');
+    expect(renderStoreThemeCss(smuggled)).not.toMatch(/--brand-(mark|wordmark)/);
   });
 
   it('writes the canonical color, not the padded value it validated', () => {
