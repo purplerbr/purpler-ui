@@ -42,23 +42,29 @@ async function expectNoAxeViolations(page: Page): Promise<void> {
   expect(found).toEqual([]);
 }
 
-for (const scheme of SCHEMES) {
-  for (const id of [...FOUNDATIONS, ...BUTTON_STORIES]) {
-    test(`${id} in ${scheme} renders with the brand fonts and no WCAG violations`, async ({
-      page,
-    }, info) => {
-      await openStory(page, id, `scheme:${scheme}`);
+// axe at phone width too: tables that scroll sideways only exist there (scrollable-region-focusable).
+const AXE_WIDTHS = [1280, 360] as const;
 
-      expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(
-        scheme === 'dark'
-      );
-      expect(await page.evaluate(() => document.fonts.check('600 16px Figtree'))).toBe(true);
-      await expectNoAxeViolations(page);
-      await page.screenshot({
-        path: `test-results/screens/${info.project.name}/${scheme}/${id}.png`,
-        fullPage: true,
+for (const width of AXE_WIDTHS) {
+  for (const scheme of SCHEMES) {
+    for (const id of [...FOUNDATIONS, ...BUTTON_STORIES]) {
+      test(`${id} in ${scheme} at ${String(width)}px renders with the brand fonts and no WCAG violations`, async ({
+        page,
+      }, info) => {
+        await page.setViewportSize({ width, height: 900 });
+        await openStory(page, id, `scheme:${scheme}`);
+
+        expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(
+          scheme === 'dark'
+        );
+        expect(await page.evaluate(() => document.fonts.check('600 16px Figtree'))).toBe(true);
+        await expectNoAxeViolations(page);
+        await page.screenshot({
+          path: `test-results/screens/${info.project.name}/${String(width)}/${scheme}/${id}.png`,
+          fullPage: true,
+        });
       });
-    });
+    }
   }
 }
 
