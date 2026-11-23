@@ -55,8 +55,8 @@ Antes de abrir um PR: `yarn lint:ci`, `yarn format:check`, `yarn typecheck`, `ya
 ### Versões e publicação
 
 - Toda mudança em pacote precisa de changeset: `yarn changeset`. O CI confere no PR.
-- Para lançar, um PR de release roda `yarn changeset version`. Depois do merge em `main`, o workflow `release` roda todos os portões (lint, typecheck, testes, build e segurança) e publica no GitHub Packages as versões que ainda não existem lá.
-- Só `dist/` vai para o pacote. O CI confere com `npm pack --dry-run` (`yarn pack:check`).
+- Para lançar, um PR de release roda `yarn changeset version`. Depois do merge em `main`, o workflow `release` roda todos os portões (lint, typecheck, testes, build e segurança) e o `changeset publish` publica no GitHub Packages as versões que ainda não existem lá. Com o Yarn 4, o changesets publica com `yarn npm publish`, que troca o `workspace:*` pela versão exata.
+- Só `dist/` vai para o pacote. O CI confere o que o `yarn pack` empacota (`yarn pack:check`): os arquivos e o `package.json`, que não pode ter `workspace:`.
 
 ## Contribuição
 

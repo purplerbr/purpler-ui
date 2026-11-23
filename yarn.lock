@@ -1912,7 +1912,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@purplerbr/tokens@workspace:^, @purplerbr/tokens@workspace:packages/tokens":
+"@purplerbr/tokens@workspace:*, @purplerbr/tokens@workspace:packages/tokens":
   version: 0.0.0-use.local
   resolution: "@purplerbr/tokens@workspace:packages/tokens"
   dependencies:
@@ -1928,7 +1928,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@purplerbr/ui@workspace:packages/ui"
   dependencies:
-    "@purplerbr/tokens": "workspace:^"
+    "@purplerbr/tokens": "workspace:*"
     "@storybook/addon-a11y": "npm:~10.6.8"
     "@storybook/addon-docs": "npm:~10.6.8"
     "@storybook/react-vite": "npm:~10.6.8"

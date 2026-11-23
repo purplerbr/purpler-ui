@@ -77,6 +77,18 @@ describe('GitHub workflows', () => {
     }
   });
 
+  it('publishes with changeset publish, after the build and the package contents check', () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
+    ) as {
+      scripts: Record<string, string>;
+    };
+
+    expect(manifest.scripts.release).toBe(
+      'yarn build && yarn pack:check && changeset publish --no-git-tag'
+    );
+  });
+
   it('releases only on push to main, after every gate, when no changeset is pending', () => {
     const release: unknown = parse(readWorkflow('release.yml'));
 

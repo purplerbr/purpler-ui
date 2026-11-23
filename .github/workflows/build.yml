@@ -42,7 +42,7 @@ jobs:
       - name: Component exports match the folders
         run: node packages/ui/scripts/exports.ts
 
-      - name: Package contents (npm pack --dry-run)
+      - name: Package contents and manifest (yarn pack)
         run: yarn pack:check
 
       - name: Build Storybook

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { fileURLToPath } from 'node:url';
-import { expectedExports, kebabCase } from '../../packages/ui/scripts/exports';
+import { expectedExports, kebabCase, syncExports } from '../../packages/ui/scripts/exports';
 import { ROOT, isRecord, read, readJson } from './helpers';
 
 const PUBLIC_PACKAGES = [
@@ -63,13 +63,32 @@ describe('@purplerbr/ui', () => {
     expect(manifest).not.toHaveProperty(['dependencies', 'react-dom']);
   });
 
-  it('depends on the tokens of this monorepo and uses its own cn, not the cn package', () => {
-    expect(manifest).toHaveProperty(['dependencies', '@purplerbr/tokens'], 'workspace:^');
+  it('depends on the exact tokens version of this monorepo and uses its own cn, not the cn package', () => {
+    expect(manifest).toHaveProperty(['dependencies', '@purplerbr/tokens'], 'workspace:*');
     expect(manifest).not.toHaveProperty(['dependencies', 'cn']);
   });
 
   it('exposes one kebab-case subpath per component folder (run exports:sync when it fails)', () => {
     expect(manifest.exports).toEqual(expectedExports());
+  });
+
+  it('syncExports passes on this package and reports or rewrites an outdated one', () => {
+    const fixture = fileURLToPath(new URL('fixtures/outdated-exports/', import.meta.url));
+    const calls: string[] = [];
+    const output = {
+      write: (file: string, content: string) => calls.push(`write ${file}\n${content}`),
+      error: (message: string) => calls.push(`error ${message}`),
+    };
+
+    expect(syncExports([], undefined, output)).toBe(0);
+    expect(syncExports([], fixture, output)).toBe(1);
+    expect(syncExports(['--write'], fixture, output)).toBe(0);
+    expect(calls[0]).toBe(
+      'error package.json exports are out of date: run yarn workspace @purplerbr/ui exports:sync\n'
+    );
+    expect(calls[1]).toContain(`write ${fixture}/package.json`);
+    expect(calls[1]).toContain('"./card": {\n      "types": "./dist/atoms/Card/index.d.ts"');
+    expect(calls).toHaveLength(2);
   });
 
   it('names subpaths in kebab-case and refuses two components with the same name', () => {
