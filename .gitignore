@@ -1,0 +1,33 @@
+# Dependências e builds
+node_modules/
+dist/
+build/
+coverage/
+coverage-*/
+playwright-report/
+test-results/
+storybook-static/
+.vite/
+*.tsbuildinfo
+
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+.dev.vars*
+.npmrc
+*.pem
+*.key
+
+# Ferramentas
+.wrangler/
+.sst/
+.claude/settings.local.json
+.DS_Store
+*.log
+
+# Yarn 4 (mantém releases e plugins)
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+.pnp.*
