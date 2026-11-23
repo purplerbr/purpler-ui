@@ -1,4 +1,4 @@
-import { CONTRAST_MINIMUM, contrastRatio, parseOklch } from './color';
+import { CONTRAST_MINIMUM, contrastRatio, formatOklch, parseOklch } from './color';
 import { fontStack, listFontFaces } from './fonts';
 import { motion } from './motion';
 import { RADIUS_STEPS, radius } from './radius';
@@ -129,46 +129,57 @@ const ALLOWED_RADII = new Set<string>(
 );
 const ALLOWED_FONTS = new Set<string>(STORE_FONTS.map(fontStack));
 
-const isOklch = (value: unknown): boolean => parseOklch(value) !== null;
+type ColorSnapshot = Readonly<Record<SemanticToken, string>>;
 
-function hasOklchColors(colors: unknown): colors is Readonly<Record<SemanticToken, string>> {
-  if (typeof colors !== 'object' || colors === null) return false;
-  return SEMANTIC_TOKENS.every((token) => isOklch(Reflect.get(colors, token)));
+const COLORS_ERROR = 'Store theme colors must be the OKLCH values built by buildStoreTheme';
+
+/** Reads each color once and keeps its canonical text, so a getter or padding cannot change the output. */
+function snapshotColors(colors: unknown): ColorSnapshot {
+  if (typeof colors !== 'object' || colors === null) throw new TypeError(COLORS_ERROR);
+  const entries = SEMANTIC_TOKENS.map((token): [SemanticToken, string] => {
+    const parsed = parseOklch(Reflect.get(colors, token));
+    if (parsed === null) throw new TypeError(COLORS_ERROR);
+    return [token, formatOklch(parsed)];
+  });
+  // Object.fromEntries loses the key type; the entries above cover every semantic token.
+  return Object.fromEntries(entries) as Record<SemanticToken, string>;
 }
 
-function failingPairs(scheme: string, colors: Readonly<Record<SemanticToken, string>>): string[] {
+function failingPairs(scheme: string, colors: ColorSnapshot): string[] {
   return SEMANTIC_PAIRS.filter(
     ({ background, foreground, level }) =>
       contrastRatio(colors[background], colors[foreground]) < CONTRAST_MINIMUM[level]
   ).map(({ background, foreground }) => `${scheme} ${background} × ${foreground}`);
 }
 
-function assertStoreTheme(theme: StoreTheme): void {
-  if (!hasOklchColors(theme.light) || !hasOklchColors(theme.dark)) {
-    throw new TypeError('Store theme colors must be the OKLCH values built by buildStoreTheme');
-  }
-  if (![theme.radius, theme.buttonRadius].every((value) => ALLOWED_RADII.has(value))) {
-    throw new TypeError('Store theme radius is not one of STORE_RADIUS');
-  }
-  if (![theme.fontBody, theme.fontHeading].every((value) => ALLOWED_FONTS.has(value))) {
-    throw new TypeError('Store theme font is not one of STORE_FONTS');
-  }
-  const failing = [...failingPairs('light', theme.light), ...failingPairs('dark', theme.dark)];
-  if (failing.length > 0) {
-    throw new TypeError(`Store theme fails WCAG AA: ${failing.join(', ')}`);
-  }
-}
+const isOneOf = (allowed: ReadonlySet<string>, value: unknown): value is string =>
+  typeof value === 'string' && allowed.has(value);
 
 /** CSS for a `<style>` tag over `tokens.css`; rejects foreign values and pairs below WCAG AA. */
 export function renderStoreThemeCss(theme: StoreTheme): string {
-  assertStoreTheme(theme);
-  const light = {
-    ...colorVariables((token) => theme.light[token]),
-    '--radius': theme.radius,
-    '--button-radius': theme.buttonRadius,
-    '--font-body': theme.fontBody,
-    '--font-heading': theme.fontHeading,
+  // Every field is read once and only the copies are validated and written.
+  const { radius: base, buttonRadius, fontBody, fontHeading } = theme;
+  const light = snapshotColors(theme.light);
+  const dark = snapshotColors(theme.dark);
+  if (!isOneOf(ALLOWED_RADII, base) || !isOneOf(ALLOWED_RADII, buttonRadius)) {
+    throw new TypeError('Store theme radius is not one of STORE_RADIUS');
+  }
+  if (!isOneOf(ALLOWED_FONTS, fontBody) || !isOneOf(ALLOWED_FONTS, fontHeading)) {
+    throw new TypeError('Store theme font is not one of STORE_FONTS');
+  }
+  const failing = [...failingPairs('light', light), ...failingPairs('dark', dark)];
+  if (failing.length > 0) {
+    throw new TypeError(`Store theme fails WCAG AA: ${failing.join(', ')}`);
+  }
+  const lightBlock = {
+    ...colorVariables((token) => light[token]),
+    '--radius': base,
+    '--button-radius': buttonRadius,
+    '--font-body': fontBody,
+    '--font-heading': fontHeading,
   };
-  const dark = colorVariables((token) => theme.dark[token]);
-  return `${block(':root', light)}${block(DARK_SELECTOR, dark)}`;
+  return `${block(':root', lightBlock)}${block(
+    DARK_SELECTOR,
+    colorVariables((token) => dark[token])
+  )}`;
 }

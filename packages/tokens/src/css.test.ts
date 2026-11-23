@@ -137,6 +137,41 @@ describe('renderStoreThemeCss', () => {
     );
   });
 
+  it('writes the canonical color, not the padded value it validated', () => {
+    const padded = { ...theme, light: { ...theme.light, primary: ` ${theme.light.primary} ` } };
+
+    expect(blockOf(renderStoreThemeCss(padded), ':root')).toContain(
+      `\n  --primary: ${theme.light.primary};`
+    );
+  });
+
+  it('reads each field once, so a getter that changes value cannot reach the CSS', () => {
+    let colorReads = 0;
+    let radiusReads = 0;
+    const light = { ...theme.light };
+    Object.defineProperty(light, 'primary', {
+      enumerable: true,
+      get: () => {
+        colorReads += 1;
+        return colorReads === 1 ? theme.light.primary : '</style><script>alert(1)</script>';
+      },
+    });
+    const forged = { ...theme, light };
+    Object.defineProperty(forged, 'radius', {
+      enumerable: true,
+      get: () => {
+        radiusReads += 1;
+        return radiusReads === 1 ? theme.radius : '1px;}*{color:red';
+      },
+    });
+
+    const css = renderStoreThemeCss(forged);
+
+    expect(css).not.toMatch(/[<>]|color:red/);
+    expect(blockOf(css, ':root')).toContain(`\n  --primary: ${theme.light.primary};`);
+    expect([colorReads, radiusReads]).toEqual([1, 1]);
+  });
+
   it('rejects a well-formed theme whose pairs fall below WCAG AA', () => {
     const forged = { ...theme, light: { ...theme.light, primary: theme.light.background } };
 
