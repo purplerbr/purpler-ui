@@ -1,0 +1,10 @@
+.yarn/
+coverage/
+dist/
+node_modules/
+playwright-report/
+storybook-static/
+test-results/
+packages/tokens/test/fixtures/
+yarn.lock
+CHANGELOG.md
