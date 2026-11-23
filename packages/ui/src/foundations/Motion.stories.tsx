@@ -22,7 +22,7 @@ function MotionPage() {
       lead="Transições curtas e calmas, que explicam o que mudou. Movimento nunca é obrigatório para entender a tela."
     >
       <Section title="Durações">
-        <DataTable head={['Token', 'Valor', 'Uso']}>
+        <DataTable label="Durações" head={['Token', 'Valor', 'Uso']}>
           {DURATIONS.map(({ name, use }) => (
             <tr key={name}>
               <td className={`${cell} font-mono`}>--duration-{name}</td>
@@ -34,7 +34,7 @@ function MotionPage() {
       </Section>
 
       <Section title="Curvas">
-        <DataTable head={['Token', 'Valor', 'Uso']}>
+        <DataTable label="Curvas de aceleração" head={['Token', 'Valor', 'Uso']}>
           {EASINGS.map(({ name, use }) => (
             <tr key={name}>
               <td className={`${cell} font-mono`}>--easing-{name}</td>

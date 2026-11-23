@@ -71,7 +71,10 @@ function TypographyPage() {
         title="Escala"
         description="Use os utilitários text-display, text-title-1 … text-caption. Cada um já traz tamanho, altura de linha, espaçamento e peso."
       >
-        <DataTable head={['Nível', 'Família e peso', 'Tamanho / linha', 'Exemplo']}>
+        <DataTable
+          label="Escala tipográfica"
+          head={['Nível', 'Família e peso', 'Tamanho / linha', 'Exemplo']}
+        >
           {SCALE.map(([name, style]) => (
             <tr key={name}>
               <td className={`${cell} font-semibold`}>{STYLE_LABELS[name]}</td>

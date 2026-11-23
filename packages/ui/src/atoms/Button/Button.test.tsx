@@ -119,6 +119,31 @@ describe('Button', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
+  it('with asChild and loading, marks the child busy, blocks it and keeps the spinner inside', async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    const defaultPrevented: boolean[] = [];
+    const record = (event: Event): void => {
+      defaultPrevented.push(event.defaultPrevented);
+    };
+    document.addEventListener('click', record);
+    render(
+      <Button asChild loading onClick={onClick}>
+        <a href="/pedidos">Ver pedidos</a>
+      </Button>
+    );
+    const link = screen.getByRole('link', { name: 'Ver pedidos' });
+
+    await user.click(link);
+    document.removeEventListener('click', record);
+
+    expect(link).toHaveAttribute('aria-busy', 'true');
+    expect(link).toHaveAttribute('aria-disabled', 'true');
+    expect(link.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(onClick).not.toHaveBeenCalled();
+    expect(defaultPrevented).toEqual([true]);
+  });
+
   it('forwards the ref to the button element (React 19 ref prop)', () => {
     const ref = { current: null as HTMLButtonElement | null };
     render(<Button ref={ref}>Salvar</Button>);
@@ -156,5 +181,110 @@ describe('Button', () => {
     );
 
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe('Button keyboard and loading', () => {
+  it('ignores Space while loading, keeps the focus and does not submit the form', async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    const onSubmit = vi.fn();
+    render(
+      <form aria-label="Produto" onSubmit={onSubmit}>
+        <Button type="submit" loading onClick={onClick}>
+          Salvando produto
+        </Button>
+      </form>
+    );
+    const button = screen.getByRole('button', { name: 'Salvando produto' });
+
+    await user.tab();
+    await user.keyboard(' ');
+
+    expect(button).toHaveFocus();
+    expect(onClick).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('blocks the implicit submit when Enter is pressed in a field while saving', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(
+      <form aria-label="Produto" onSubmit={onSubmit}>
+        <label>
+          Nome do produto
+          <input name="name" />
+        </label>
+        <Button type="submit" loading>
+          Salvando produto
+        </Button>
+      </form>
+    );
+
+    await user.type(screen.getByRole('textbox', { name: 'Nome do produto' }), 'Caneca{Enter}');
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('submits with Enter in a field once loading ends', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn((event: React.SyntheticEvent) => {
+      event.preventDefault();
+    });
+    const form = (loading: boolean) => (
+      <form aria-label="Produto" onSubmit={onSubmit}>
+        <label>
+          Nome do produto
+          <input name="name" />
+        </label>
+        <Button type="submit" loading={loading}>
+          Salvar produto
+        </Button>
+      </form>
+    );
+    const { rerender } = render(form(true));
+
+    rerender(form(false));
+    await user.type(screen.getByRole('textbox', { name: 'Nome do produto' }), 'Caneca{Enter}');
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Salvar produto' })).not.toHaveAttribute('aria-busy');
+    expect(screen.getByRole('button', { name: 'Salvar produto' })).not.toHaveAttribute(
+      'aria-disabled'
+    );
+  });
+
+  it('skips a disabled button between two enabled ones when tabbing', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Button>Voltar</Button>
+        <Button disabled>Excluir</Button>
+        <Button>Salvar</Button>
+      </>
+    );
+
+    await user.tab();
+    await user.tab();
+
+    expect(screen.getByRole('button', { name: 'Salvar' })).toHaveFocus();
+  });
+
+  it('keeps a reset button as reset', async () => {
+    const user = userEvent.setup();
+    render(
+      <form aria-label="Busca">
+        <label>
+          Buscar
+          <input name="q" />
+        </label>
+        <Button type="reset">Limpar</Button>
+      </form>
+    );
+
+    await user.type(screen.getByRole('textbox', { name: 'Buscar' }), 'caneca');
+    await user.click(screen.getByRole('button', { name: 'Limpar' }));
+
+    expect(screen.getByRole('textbox', { name: 'Buscar' })).toHaveValue('');
   });
 });

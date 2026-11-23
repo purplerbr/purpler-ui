@@ -27,21 +27,13 @@ export function Button({
   onClick,
   ...props
 }: ButtonProps) {
-  const classes = cn(buttonVariants({ variant, size }), className);
-
-  if (asChild) {
-    return (
-      <Slot.Root data-slot="button" className={classes} onClick={onClick} {...props}>
-        {children}
-      </Slot.Root>
-    );
-  }
+  const Comp = asChild ? Slot.Root : 'button';
 
   return (
-    <button
+    <Comp
       data-slot="button"
-      type={type}
-      className={classes}
+      type={asChild ? undefined : type}
+      className={cn(buttonVariants({ variant, size }), className)}
       {...props}
       {...(loading && { 'aria-busy': true, 'aria-disabled': true })}
       onClick={loading ? preventActivation : onClick}
@@ -49,7 +41,8 @@ export function Button({
       {loading && (
         <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
       )}
-      {children}
-    </button>
+      {/* With asChild, Slottable marks the child that receives the props; the spinner goes inside it. */}
+      <Slot.Slottable>{children}</Slot.Slottable>
+    </Comp>
   );
 }

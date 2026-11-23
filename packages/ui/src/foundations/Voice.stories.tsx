@@ -69,7 +69,7 @@ function VoicePage() {
       </Section>
 
       <Section title="Tom">
-        <DataTable head={['Somos', 'Sem ser']}>
+        <DataTable label="Tom de voz" head={['Somos', 'Sem ser']}>
           {TONE.map(({ we, not }) => (
             <tr key={we}>
               <td className={`${cell} font-semibold`}>{we}</td>
@@ -91,7 +91,7 @@ function VoicePage() {
       </Section>
 
       <Section title="Exemplos de microcopy">
-        <DataTable head={['Contexto', 'Escreva assim', 'Evite']}>
+        <DataTable label="Exemplos de microcopy" head={['Contexto', 'Escreva assim', 'Evite']}>
           {EXAMPLES.map(({ context, write, avoid }) => (
             <tr key={context}>
               <td className={`${cell} font-semibold`}>{context}</td>

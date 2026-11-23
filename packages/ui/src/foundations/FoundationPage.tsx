@@ -67,9 +67,21 @@ export function Verdict({ ok, children }: { ok: boolean; children: ReactNode }) 
   );
 }
 
-export function DataTable({ head, children }: { head: readonly string[]; children: ReactNode }) {
+interface DataTableProps {
+  label: string;
+  head: readonly string[];
+  children: ReactNode;
+}
+
+/** The table scrolls sideways on small screens, so its container must take keyboard focus (WCAG 2.1.1). */
+export function DataTable({ label, head, children }: DataTableProps) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
+    <div
+      role="region"
+      aria-label={label}
+      tabIndex={0}
+      className="overflow-x-auto rounded-lg border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    >
       <table className="w-full border-collapse text-left text-small">
         <thead className="bg-muted text-muted-foreground">
           <tr>

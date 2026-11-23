@@ -47,6 +47,10 @@ export default defineConfig(
     files: ['packages/ui/**/*.tsx'],
     extends: [jsxA11y.flatConfigs.strict, reactHooks.configs.flat.recommended],
     languageOptions: { globals: globals.browser },
+    rules: {
+      // A scrollable region must take focus to be scrolled by keyboard (WCAG 2.1.1, axe scrollable-region-focusable).
+      'jsx-a11y/no-noninteractive-tabindex': ['error', { tags: [], roles: ['tabpanel', 'region'] }],
+    },
   },
   {
     files: ['packages/*/src/**/*.{ts,tsx}'],

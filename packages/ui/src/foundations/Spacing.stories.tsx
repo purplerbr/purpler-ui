@@ -13,7 +13,7 @@ function SpacingPage() {
       lead="Grade de 4 px. A unidade é a mesma do Tailwind, então p-4 é 1rem (16 px) e gap-6 é 1,5rem (24 px)."
     >
       <Section title="Escala">
-        <DataTable head={['Passo', 'Valor', 'Pixels', 'Tamanho']}>
+        <DataTable label="Escala de espaçamento" head={['Passo', 'Valor', 'Pixels', 'Tamanho']}>
           {STEPS.map(([step, value]) => (
             <tr key={step}>
               <td className={`${cell} font-mono`}>{step}</td>

@@ -129,7 +129,10 @@ function ColorsPage({ scheme, store }: { scheme: Scheme; store: string }) {
         title={`Contraste dos pares semânticos (tema ${schemeLabel}, ${source})`}
         description="Todo par que os componentes usam passa no WCAG 2.2 AA: 4,5:1 para texto e 3:1 para componentes de UI e foco. Troque o tema e a marca na barra de ferramentas."
       >
-        <DataTable head={['Exemplo', 'Fundo × frente', 'Mínimo', 'Contraste', 'Resultado']}>
+        <DataTable
+          label="Contraste dos pares semânticos"
+          head={['Exemplo', 'Fundo × frente', 'Mínimo', 'Contraste', 'Resultado']}
+        >
           {SEMANTIC_PAIRS.map(({ background, foreground, level }) => {
             const ratio = contrastRatio(colorOf(background), colorOf(foreground));
             const passes = ratio >= CONTRAST_MINIMUM[level];
