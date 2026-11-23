@@ -33,6 +33,7 @@ describe('GitHub workflows', () => {
       'release.yml',
       'security.yml',
       'setup.yml',
+      'storybook-pages.yml',
       'test.yml',
       'typecheck.yml',
     ]);
@@ -52,16 +53,24 @@ describe('GitHub workflows', () => {
     expect(parse(readWorkflow(file))).toHaveProperty('permissions', { contents: 'read' });
   });
 
-  it('grants packages: write to the publish job of the release only', () => {
+  it('grants write access only to the publish job and the gh-pages deploy jobs', () => {
+    const pagesWrite = { contents: 'write' };
+    const previewWrite = { contents: 'write', 'pull-requests': 'write' };
+    const allowed: Record<string, unknown> = {
+      'release.yml › publish': { contents: 'read', packages: 'write' },
+      'storybook-pages.yml › pages': pagesWrite,
+      'storybook-pages.yml › preview': previewWrite,
+      'storybook-pages.yml › preview-remove': previewWrite,
+    };
+    const granted: Record<string, unknown> = {};
+
     for (const file of WORKFLOW_FILES) {
       for (const [name, job] of jobsOf(parse(readWorkflow(file)))) {
-        if (file === 'release.yml' && name === 'publish') {
-          expect(job).toHaveProperty('permissions', { contents: 'read', packages: 'write' });
-        } else {
-          expect(job, `${file} › ${name}`).not.toHaveProperty('permissions');
-        }
+        if ('permissions' in job) granted[`${file} › ${name}`] = job.permissions;
       }
     }
+
+    expect(granted).toEqual(allowed);
   });
 
   it.each(WORKFLOW_FILES)(
@@ -120,6 +129,80 @@ describe('GitHub workflows', () => {
     expect(runs('publish')).toEqual(['yarn release']);
     expect(tokenSteps).toEqual(['publish › Publish']);
     expect(readWorkflow('release.yml').match(/github\.token/g)).toHaveLength(1);
+  });
+
+  it('builds Storybook without write access and deploys it only to gh-pages, never from forks', () => {
+    const pages: unknown = parse(readWorkflow('storybook-pages.yml'));
+    const jobs = new Map(jobsOf(pages));
+    const deployJobs = ['pages', 'preview', 'preview-remove'];
+    const sameRepo = 'github.event.pull_request.head.repo.full_name == github.repository';
+
+    expect(pages).toHaveProperty('on', {
+      push: { branches: ['main'] },
+      pull_request: { types: ['opened', 'synchronize', 'reopened', 'closed'] },
+    });
+    for (const [name, job] of jobs) {
+      const runsBuild = stepsOf(job).some((step) => String(step.run).includes('build-storybook'));
+      if (runsBuild) expect(job, name).not.toHaveProperty('permissions');
+      if ('runs-on' in job) expect(job, name).toHaveProperty('timeout-minutes');
+    }
+    for (const name of deployJobs) {
+      const job = jobs.get(name);
+      expect(
+        stepsOf(job).filter((step) => 'run' in step),
+        name
+      ).toEqual([]);
+      expect(job, name).toHaveProperty('concurrency', {
+        group: 'gh-pages',
+        'cancel-in-progress': false,
+      });
+    }
+    expect(String(jobs.get('setup')?.if)).toContain(sameRepo);
+    expect(String(jobs.get('preview-remove')?.if)).toContain(sameRepo);
+    expect(jobs.get('pages')).toHaveProperty('if', "github.event_name == 'push'");
+    expect(jobs.get('pages')).toHaveProperty(['steps', 2, 'with', 'clean-exclude'], 'pr-preview/');
+  });
+
+  it('lets only the expected actions run in the gh-pages deploy jobs, skipping Dependabot', () => {
+    const jobs = new Map(jobsOf(parse(readWorkflow('storybook-pages.yml'))));
+    const actions = (name: string): string[] =>
+      stepsOf(jobs.get(name)).flatMap((step) =>
+        typeof step.uses === 'string' ? [step.uses.split('@')[0] ?? ''] : []
+      );
+
+    expect(actions('pages')).toEqual([
+      'actions/checkout',
+      'actions/download-artifact',
+      'JamesIves/github-pages-deploy-action',
+    ]);
+    expect(actions('preview')).toEqual([
+      'actions/checkout',
+      'actions/download-artifact',
+      'rossjrw/pr-preview-action',
+    ]);
+    expect(actions('preview-remove')).toEqual(['actions/checkout', 'rossjrw/pr-preview-action']);
+    for (const name of ['preview', 'preview-remove']) {
+      expect(String(jobs.get(name)?.if), name).toContain("github.actor != 'dependabot[bot]'");
+    }
+  });
+
+  it('names no Storybook Pages job like a required check of the CI', () => {
+    const names = (file: string): unknown[] =>
+      jobsOf(parse(readWorkflow(file))).map(([, job]) => job.name);
+    const ciNames = names('ci.yml');
+
+    expect(names('storybook-pages.yml').filter((name) => ciNames.includes(name))).toEqual([]);
+  });
+
+  it('scans every ref with gitleaks except the generated gh-pages branch', () => {
+    const security: unknown = parse(readWorkflow('security.yml'));
+    const scan = stepsOf(new Map(jobsOf(security)).get('gitleaks')).find(
+      (step) => step.name === 'Scan commits'
+    );
+
+    expect(scan?.run).toBe(
+      '"$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose --log-opts="--exclude=refs/remotes/origin/gh-pages --exclude=refs/heads/gh-pages --all" .'
+    );
   });
 
   it('keeps gitleaks with its default rules: no config, allowlist or ignore file', () => {

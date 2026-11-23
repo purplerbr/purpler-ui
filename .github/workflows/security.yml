@@ -28,8 +28,9 @@ jobs:
           echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check --strict
           tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
 
+      # gh-pages holds the minified Storybook build, not source, and trips generic-api-key.
       - name: Scan commits
-        run: '"$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose .'
+        run: '"$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose --log-opts="--exclude=refs/remotes/origin/gh-pages --exclude=refs/heads/gh-pages --all" .'
 
   audit:
     name: Dependency audit (high and critical)
