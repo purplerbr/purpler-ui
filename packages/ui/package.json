@@ -36,6 +36,10 @@
       "types": "./dist/atoms/Heading/index.d.ts",
       "import": "./dist/atoms/Heading/index.js"
     },
+    "./text": {
+      "types": "./dist/atoms/Text/index.d.ts",
+      "import": "./dist/atoms/Text/index.js"
+    },
     "./alert": {
       "types": "./dist/molecules/Alert/index.d.ts",
       "import": "./dist/molecules/Alert/index.js"
@@ -43,6 +47,10 @@
     "./card": {
       "types": "./dist/molecules/Card/index.d.ts",
       "import": "./dist/molecules/Card/index.js"
+    },
+    "./auth-layout": {
+      "types": "./dist/templates/AuthLayout/index.d.ts",
+      "import": "./dist/templates/AuthLayout/index.js"
     },
     "./package.json": "./package.json"
   },
