@@ -1,7 +1,7 @@
 import { LoaderCircle } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { cn } from '../../utils/cn';
-import { spinnerVariants, type SpinnerVariants } from './Spinner.variants';
+import { spinnerLabelVariants, spinnerVariants, type SpinnerVariants } from './Spinner.variants';
 
 export type SpinnerProps = ComponentProps<'span'> &
   SpinnerVariants & {
@@ -23,11 +23,7 @@ export function Spinner({
     <span
       data-slot="spinner"
       role="status"
-      className={cn(
-        'inline-flex items-center gap-2 font-sans',
-        size === 'lg' ? 'text-body' : 'text-small',
-        className
-      )}
+      className={cn(spinnerLabelVariants({ size }), className)}
       {...props}
     >
       <LoaderCircle aria-hidden="true" className={spinnerVariants({ size })} />

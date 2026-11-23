@@ -11,4 +11,12 @@ export const spinnerVariants = cva(
   }
 );
 
+// The large spinner is the page fallback, so its label reads at body size.
+export const spinnerLabelVariants = cva('inline-flex items-center gap-2 font-sans', {
+  variants: {
+    size: { sm: 'text-small', md: 'text-small', lg: 'text-body' },
+  },
+  defaultVariants: { size: 'md' },
+});
+
 export type SpinnerVariants = VariantProps<typeof spinnerVariants>;

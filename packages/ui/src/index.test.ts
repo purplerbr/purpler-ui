@@ -29,6 +29,7 @@ describe('@purplerbr/ui public API', () => {
       'cn',
       'headingVariants',
       'skeletonVariants',
+      'spinnerLabelVariants',
       'spinnerVariants',
       'textVariants',
     ]);
