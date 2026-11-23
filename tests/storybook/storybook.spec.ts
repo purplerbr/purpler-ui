@@ -202,6 +202,8 @@ test('under reduced motion the spinner stops, shows its label and the skeleton s
   const status = page.getByRole('status');
 
   await expect(status.getByText('Carregando…')).toBeVisible();
+  // toBeVisible accepts the 1px sr-only box, so check the label left it.
+  expect((await status.getByText('Carregando…').boundingBox())?.width).toBeGreaterThan(1);
   expect(await status.locator('svg').evaluate((icon) => getComputedStyle(icon).animationName)).toBe(
     'none'
   );
