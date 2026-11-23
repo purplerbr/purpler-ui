@@ -59,10 +59,25 @@ describe('theme.css', () => {
     expect(css).toContain(`  --color-${token}: var(--${token});`);
   });
 
-  it('drops the literal Tailwind palette, radii and shadows', () => {
-    expect(css).toContain('  --color-*: initial;');
-    expect(css).toContain('  --radius-*: initial;');
-    expect(css).toContain('  --shadow-*: initial;');
+  it.each([
+    'color',
+    'font',
+    'font-weight',
+    'text',
+    'radius',
+    'shadow',
+    'inset-shadow',
+    'drop-shadow',
+    'text-shadow',
+    'ease',
+  ])('drops the literal Tailwind --%s-* scale', (namespace) => {
+    expect(css).toContain(`  --${namespace}-*: initial;`);
+  });
+
+  it('maps the brand font weights to the Tailwind names', () => {
+    expect(css).toContain('  --font-weight-normal: 400;');
+    expect(css).toContain('  --font-weight-semibold: 600;');
+    expect(css).toContain('  --font-weight-extrabold: 800;');
   });
 
   it('derives the radius steps from --radius and maps fonts, shadows and text styles', () => {
@@ -119,6 +134,14 @@ describe('renderStoreThemeCss', () => {
     expect(blockOf(css, ':root')).toContain("  --font-body: 'Nunito', ");
     expect(blockOf(css, ".dark,\n[data-theme='dark']")).toContain(
       `  --primary: ${theme.dark.primary};`
+    );
+  });
+
+  it('rejects a well-formed theme whose pairs fall below WCAG AA', () => {
+    const forged = { ...theme, light: { ...theme.light, primary: theme.light.background } };
+
+    expect(() => renderStoreThemeCss(forged)).toThrow(
+      'Store theme fails WCAG AA: light background × primary, light card × primary'
     );
   });
 

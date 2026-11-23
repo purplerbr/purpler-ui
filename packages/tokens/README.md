@@ -25,7 +25,7 @@ yarn add @purplerbr/tokens@0.1.0
 | `theme.css`  | `@theme inline` que liga as variáveis aos utilitários (`bg-primary`, `rounded-lg`, `shadow-md`, `text-title-1`, `font-display`) e `@custom-variant dark` |
 | `fonts.css`  | `@font-face` das fontes auto-hospedadas, servidas de `dist/fonts`                                                                                        |
 
-O `theme.css` remove a paleta, os raios e as sombras literais do Tailwind (`bg-red-500` deixa de existir). Só sobram os tokens semânticos.
+O `theme.css` remove as escalas literais do Tailwind: cores, famílias e pesos de fonte, tamanhos de texto, raios, sombras (inclusive `inset-shadow`, `drop-shadow` e `text-shadow`) e curvas de aceleração. `bg-red-500`, `text-sm` e `font-serif` deixam de existir; só sobram os utilitários dos tokens (`bg-primary`, `text-small`, `font-display`, `font-semibold`).
 
 ## TypeScript
 
@@ -54,7 +54,7 @@ const css = renderStoreThemeCss(theme); // vai num <style> depois do tokens.css
 ```
 
 - `buildStoreTheme()` aceita só `#rrggbb`, `#rgb` ou `oklch(L C H)`, um raio de `STORE_RADIUS` e uma fonte de `STORE_FONTS`. Qualquer outro valor lança `TypeError`. As cores são convertidas em números e serializadas de novo, então o valor de entrada nunca chega cru ao CSS.
-- `renderStoreThemeCss()` recusa valores que o `buildStoreTheme()` não produziria.
+- `renderStoreThemeCss()` recusa, com `TypeError`, valores que o `buildStoreTheme()` não produziria: cor fora do formato `oklch(L C H)`, raio ou fonte fora das listas e qualquer par de `SEMANTIC_PAIRS` abaixo do WCAG AA.
 - Exports: `palette`, `semantic`, `SEMANTIC_PAIRS`, `radius`, `spacing`, `shadow`, `typography`, `motion`, `STORE_THEME_PRESETS`, `STORE_FONTS`, `STORE_RADIUS`, `buildStoreTheme()`, `renderStoreThemeCss()`, `contrastRatio()`, `pickForeground()`, `isAccessiblePair()` e utilitários de cor (`toOklch`, `toHex`, `formatOklch`).
 
 ## Fontes

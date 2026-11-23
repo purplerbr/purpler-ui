@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { palette } from '@purplerbr/tokens';
+import { fontStack, palette } from '@purplerbr/tokens';
 import type { CSSProperties } from 'react';
 import appleTouchIcon from '../assets/brand/apple-touch-icon.png';
 import favicon from '../assets/brand/favicon.svg';
@@ -137,7 +137,7 @@ function BrandPage() {
             </div>
           </div>
         </div>
-        <DataTable head={['Peça', 'Tela', 'Impresso']}>
+        <DataTable label="Tamanho mínimo do logo" head={['Peça', 'Tela', 'Impresso']}>
           <tr>
             <td className={cell}>Logo completo</td>
             <td className={cell}>20 px de altura (cerca de 102 px de largura)</td>
@@ -200,7 +200,10 @@ function BrandPage() {
           <Card>
             <div className="flex h-24 items-center justify-center gap-2 rounded-md" style={SAND}>
               <img src={symbol} alt="" height={32} width={32} />
-              <span className="font-serif text-title-3" style={{ color: palette.brand[950].oklch }}>
+              <span
+                className="text-title-3"
+                style={{ color: palette.brand[950].oklch, fontFamily: fontStack('lora') }}
+              >
                 Purpler
               </span>
             </div>

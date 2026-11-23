@@ -18,6 +18,6 @@ describe('cn', () => {
     expect(cn('text-small', 'text-body')).toBe('text-body');
     expect(cn('rounded-md', 'rounded-button')).toBe('rounded-button');
     expect(cn('font-sans', 'font-display')).toBe('font-display');
-    expect(cn('ease-in', 'ease-standard')).toBe('ease-standard');
+    expect(cn('ease-enter', 'ease-standard')).toBe('ease-standard');
   });
 });

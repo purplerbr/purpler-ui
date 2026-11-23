@@ -26,7 +26,7 @@ export default defineConfig({
         test: {
           name: 'ui',
           environment: 'jsdom',
-          include: ['packages/ui/src/**/*.test.{ts,tsx}', 'packages/ui/scripts/**/*.test.ts'],
+          include: ['packages/ui/src/**/*.test.{ts,tsx}', 'packages/ui/test/**/*.test.ts'],
           setupFiles: ['packages/ui/test/setup.ts'],
           restoreMocks: true,
         },

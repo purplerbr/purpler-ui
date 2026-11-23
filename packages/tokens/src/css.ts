@@ -1,8 +1,8 @@
-import { parseOklch } from './color';
+import { CONTRAST_MINIMUM, contrastRatio, parseOklch } from './color';
 import { fontStack, listFontFaces } from './fonts';
 import { motion } from './motion';
 import { RADIUS_STEPS, radius } from './radius';
-import { SEMANTIC_TOKENS, semantic, type SemanticToken } from './semantic';
+import { SEMANTIC_PAIRS, SEMANTIC_TOKENS, semantic, type SemanticToken } from './semantic';
 import { shadow, type ShadowStep } from './shadow';
 import { spacing } from './spacing';
 import { STORE_FONTS, STORE_RADIUS, type StoreTheme } from './storeTheme';
@@ -66,14 +66,22 @@ function textVariables(): Declarations {
   );
 }
 
-/** `theme.css`: maps the variables to Tailwind v4 utilities and drops Tailwind's literal palette. */
+/** `theme.css`: maps the variables to Tailwind v4 utilities and drops Tailwind's literal scales. */
 export function renderThemeCss(): string {
   const theme = {
     '--color-*': 'initial',
     ...Object.fromEntries(SEMANTIC_TOKENS.map((token) => [`--color-${token}`, `var(--${token})`])),
+    '--font-*': 'initial',
     '--font-sans': 'var(--font-body)',
     '--font-display': 'var(--font-heading)',
     '--font-mono': 'var(--font-code)',
+    '--font-weight-*': 'initial',
+    ...Object.fromEntries(
+      Object.entries(typography.weight).map(([name, value]) => [
+        `--font-weight-${name === 'regular' ? 'normal' : name}`,
+        String(value),
+      ])
+    ),
     '--radius-*': 'initial',
     ...Object.fromEntries(
       Object.entries(RADIUS_STEPS).map(([k, px]) => [`--radius-${k}`, offset(px)])
@@ -83,12 +91,17 @@ export function renderThemeCss(): string {
     ...Object.fromEntries(
       SHADOW_STEPS.map((step) => [`--shadow-${step}`, `var(--elevation-${step})`])
     ),
+    '--inset-shadow-*': 'initial',
+    '--drop-shadow-*': 'initial',
+    '--text-shadow-*': 'initial',
+    '--ease-*': 'initial',
     ...Object.fromEntries(
       Object.keys(motion.easing).map((k) => [`--ease-${k}`, `var(--easing-${k})`])
     ),
     '--default-transition-duration': 'var(--duration-fast)',
     '--default-transition-timing-function': 'var(--easing-standard)',
     '--spacing': spacing.unit,
+    '--text-*': 'initial',
     ...textVariables(),
   };
   const variant =
@@ -116,12 +129,22 @@ const ALLOWED_RADII = new Set<string>(
 );
 const ALLOWED_FONTS = new Set<string>(STORE_FONTS.map(fontStack));
 
-const isOklch = (value: unknown): boolean =>
-  typeof value === 'string' && parseOklch(value) !== null;
+const isOklch = (value: unknown): boolean => parseOklch(value) !== null;
+
+function hasOklchColors(colors: unknown): colors is Readonly<Record<SemanticToken, string>> {
+  if (typeof colors !== 'object' || colors === null) return false;
+  return SEMANTIC_TOKENS.every((token) => isOklch(Reflect.get(colors, token)));
+}
+
+function failingPairs(scheme: string, colors: Readonly<Record<SemanticToken, string>>): string[] {
+  return SEMANTIC_PAIRS.filter(
+    ({ background, foreground, level }) =>
+      contrastRatio(colors[background], colors[foreground]) < CONTRAST_MINIMUM[level]
+  ).map(({ background, foreground }) => `${scheme} ${background} × ${foreground}`);
+}
 
 function assertStoreTheme(theme: StoreTheme): void {
-  const schemes = [theme.light, theme.dark];
-  if (!schemes.every((colors) => SEMANTIC_TOKENS.every((token) => isOklch(colors[token])))) {
+  if (!hasOklchColors(theme.light) || !hasOklchColors(theme.dark)) {
     throw new TypeError('Store theme colors must be the OKLCH values built by buildStoreTheme');
   }
   if (![theme.radius, theme.buttonRadius].every((value) => ALLOWED_RADII.has(value))) {
@@ -130,9 +153,13 @@ function assertStoreTheme(theme: StoreTheme): void {
   if (![theme.fontBody, theme.fontHeading].every((value) => ALLOWED_FONTS.has(value))) {
     throw new TypeError('Store theme font is not one of STORE_FONTS');
   }
+  const failing = [...failingPairs('light', theme.light), ...failingPairs('dark', theme.dark)];
+  if (failing.length > 0) {
+    throw new TypeError(`Store theme fails WCAG AA: ${failing.join(', ')}`);
+  }
 }
 
-/** CSS for a `<style>` tag that applies a store theme over `tokens.css`; rejects foreign values. */
+/** CSS for a `<style>` tag over `tokens.css`; rejects foreign values and pairs below WCAG AA. */
 export function renderStoreThemeCss(theme: StoreTheme): string {
   assertStoreTheme(theme);
   const light = {
