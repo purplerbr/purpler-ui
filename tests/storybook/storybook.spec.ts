@@ -183,6 +183,19 @@ test('the checkbox is reachable with Tab, toggles with Space and shows the focus
   await expect(checkbox).not.toBeChecked();
 });
 
+test('a page h1 focused by script (tabIndex -1) shows no focus ring', async ({ page }) => {
+  await openStory(page, 'atoms-heading--page-title', 'scheme:light');
+  const heading = page.getByRole('heading', { level: 1 });
+
+  await heading.evaluate((element) => {
+    element.tabIndex = -1;
+    element.focus();
+  });
+
+  await expect(heading).toBeFocused();
+  expect(await heading.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe('none');
+});
+
 test('the loading button keeps the focus and ignores Enter', async ({ page, browserName }) => {
   await openStory(page, 'atoms-button--loading', 'scheme:light');
   const button = page.getByRole('button', { name: 'Salvando produto' });

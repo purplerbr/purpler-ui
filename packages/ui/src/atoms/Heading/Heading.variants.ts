@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 
-export const headingVariants = cva('font-display text-balance', {
+// Pages move focus to the h1 with tabIndex -1; a heading is never tabbable, so no ring (2.4.7).
+export const headingVariants = cva('font-display text-balance outline-none', {
   variants: {
     size: {
       display: 'text-display',

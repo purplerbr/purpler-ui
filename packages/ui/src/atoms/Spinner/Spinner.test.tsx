@@ -10,6 +10,19 @@ describe('Spinner', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Carregando…');
   });
 
+  it('is named by its label, so it can be found by role and name', () => {
+    render(<Spinner label="Carregando pedidos…" />);
+
+    expect(screen.getByRole('status', { name: 'Carregando pedidos…' })).toBeInTheDocument();
+  });
+
+  it('keeps its role and name when props try to replace them', () => {
+    render(<Spinner label="Carregando o painel…" role="alert" aria-label="Outro nome" />);
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Carregando o painel…' })).toBeInTheDocument();
+  });
+
   it('announces the label it is given', () => {
     render(<Spinner label="Carregando pedidos…" />);
 
