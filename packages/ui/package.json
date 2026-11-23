@@ -1,6 +1,6 @@
 {
   "name": "@purplerbr/ui",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Componentes React da Purpler (Tailwind + shadcn/ui), em design atômico.",
   "license": "MIT",
   "type": "module",
