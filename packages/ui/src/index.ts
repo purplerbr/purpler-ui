@@ -4,6 +4,10 @@ export { Checkbox, checkboxFieldVariants, checkboxVariants } from './atoms/Check
 export type { CheckboxProps } from './atoms/Checkbox';
 export { Heading, headingVariants } from './atoms/Heading';
 export type { HeadingLevel, HeadingProps, HeadingVariants } from './atoms/Heading';
+export { Skeleton, skeletonVariants } from './atoms/Skeleton';
+export type { SkeletonProps } from './atoms/Skeleton';
+export { Spinner, spinnerLabelVariants, spinnerVariants } from './atoms/Spinner';
+export type { SpinnerProps, SpinnerVariants } from './atoms/Spinner';
 export { Text, textVariants } from './atoms/Text';
 export type { TextElement, TextProps, TextVariants } from './atoms/Text';
 export { Alert, AlertDescription, AlertTitle, alertVariants } from './molecules/Alert';

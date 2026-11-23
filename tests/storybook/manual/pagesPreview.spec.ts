@@ -19,6 +19,8 @@ const STORIES = [
   'molecules-card--all-variants',
   'atoms-text--all-variants',
   'templates-authlayout--default',
+  'atoms-spinner--all-variants',
+  'atoms-skeleton--all-variants',
 ] as const;
 const COMPONENT_MATRIX = [
   'atoms-checkbox--all-variants',
@@ -27,6 +29,9 @@ const COMPONENT_MATRIX = [
   'molecules-card--all-variants',
   'atoms-text--all-variants',
   'templates-authlayout--default',
+  'atoms-spinner--all-variants',
+  'atoms-spinner--page-loading',
+  'atoms-skeleton--all-variants',
 ] as const;
 // WebKit lacks requestIdleCallback, which the Storybook manager calls; it is not the library's.
 const KNOWN_ERROR = /requestIdleCallback/;
@@ -103,7 +108,7 @@ test('switches between light and dark from the toolbar', async ({ page }, info) 
   expect(problems).toEqual({ errors: [], badRequests: [] });
 });
 
-test('renders the Checkbox, Alert, Heading, Card, Text and AuthLayout in light and dark at phone and desktop width', async ({
+test('renders the Checkbox, Alert, Heading, Card, Text, AuthLayout, Spinner and Skeleton in light and dark at phone and desktop width', async ({
   page,
 }, info) => {
   const problems = watch(page);
