@@ -32,9 +32,17 @@
       "types": "./dist/atoms/Checkbox/index.d.ts",
       "import": "./dist/atoms/Checkbox/index.js"
     },
+    "./heading": {
+      "types": "./dist/atoms/Heading/index.d.ts",
+      "import": "./dist/atoms/Heading/index.js"
+    },
     "./alert": {
       "types": "./dist/molecules/Alert/index.d.ts",
       "import": "./dist/molecules/Alert/index.js"
+    },
+    "./card": {
+      "types": "./dist/molecules/Card/index.d.ts",
+      "import": "./dist/molecules/Card/index.js"
     },
     "./package.json": "./package.json"
   },

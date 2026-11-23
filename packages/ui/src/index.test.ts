@@ -8,12 +8,21 @@ describe('@purplerbr/ui public API', () => {
       'AlertDescription',
       'AlertTitle',
       'Button',
+      'Card',
+      'CardContent',
+      'CardDescription',
+      'CardFooter',
+      'CardHeader',
+      'CardTitle',
       'Checkbox',
+      'Heading',
       'alertVariants',
       'buttonVariants',
+      'cardVariants',
       'checkboxFieldVariants',
       'checkboxVariants',
       'cn',
+      'headingVariants',
     ]);
   });
 });
