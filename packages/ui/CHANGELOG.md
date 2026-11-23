@@ -1,5 +1,17 @@
 # @purplerbr/ui
 
+## 0.2.0
+
+### Minor Changes
+
+- 81c33c7: Add the `Spinner` and `Skeleton` atoms for loading states. `Spinner` is a `role="status"` region labelled "Carregando…" by default; under reduced motion the ring stops and the label shows. `Spinner` is for lazy route chunks; data screens use `Skeleton`, an `aria-hidden` `bg-skeleton` block that stops pulsing under reduced motion; its container announces the loading.
+
+### Patch Changes
+
+- 416c77b: `Heading` shows no focus ring when a page moves focus to it by script (`tabIndex={-1}`); a heading is never in the tab order. `Spinner` is now named by its `label` (`aria-label`), so `getByRole('status', { name })` finds it, and props can no longer replace its `role` or name.
+- Updated dependencies [b659095]
+  - @purplerbr/tokens@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes
