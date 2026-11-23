@@ -15,6 +15,8 @@ const BUTTON_STORIES = [
   'atoms-button--all-variants',
   'atoms-button--default',
   'atoms-button--loading',
+  'atoms-button--long-label',
+  'atoms-button--link-in-text',
 ] as const;
 const FORM_STORIES = ['atoms-checkbox--all-variants', 'molecules-alert--all-variants'] as const;
 const CONTENT_STORIES = [
@@ -162,6 +164,64 @@ test('the button is reachable with Tab and shows a 2px focus outline in the ring
   expect(outline).toEqual({ style: 'solid', width: '2px' });
 });
 
+test('single-line buttons keep their fixed height in every size, with or without a border', async ({
+  page,
+}) => {
+  await openStory(page, 'atoms-button--all-variants', 'scheme:light');
+
+  for (const name of ['Publicar loja', 'Editar produto', 'Ver todos os pedidos']) {
+    const heights = await page
+      .getByRole('button', { name, exact: true })
+      .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
+    expect(heights, name).toEqual([32, 40, 48]);
+  }
+});
+
+test('a long label wraps inside the button and the viewport at 360px', async ({ page }, info) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'atoms-button--long-label', 'scheme:light');
+  const button = page.getByRole('button', { name: /Doceria e Confeitaria/ });
+
+  const box = await button.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      overflow: element.scrollWidth - element.clientWidth,
+      left: rect.left,
+      right: rect.right,
+      height: rect.height,
+    };
+  });
+  expect(box.overflow).toBeLessThanOrEqual(0);
+  expect(box.left).toBeGreaterThanOrEqual(0);
+  expect(box.right).toBeLessThanOrEqual(360);
+  expect(box.height).toBeGreaterThan(40);
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/360/button-long-label.png`,
+  });
+});
+
+test('a link-variant button lines up with the text next to it', async ({ page }, info) => {
+  await openStory(page, 'atoms-button--link-in-text', 'scheme:light');
+  const text = page.getByText('Você ainda não recebeu pedidos hoje.');
+  const link = page.getByRole('button', { name: 'Ver todos os pedidos' });
+
+  const [textLeft, linkLeft, labelLeft] = await Promise.all([
+    text.evaluate((element) => element.getBoundingClientRect().left),
+    link.evaluate((element) => element.getBoundingClientRect().left),
+    link.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return range.getBoundingClientRect().left;
+    }),
+  ]);
+  expect(linkLeft).toBe(textLeft);
+  // WebKit puts the glyph box a few thousandths of a pixel in.
+  expect(labelLeft).toBeCloseTo(textLeft, 1);
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/button-link-in-text.png`,
+  });
+});
+
 test('the checkbox is reachable with Tab, toggles with Space and shows the focus outline', async ({
   page,
   browserName,
@@ -249,7 +309,12 @@ for (const width of [360, 768, 1280]) {
     page,
   }, info) => {
     await page.setViewportSize({ width, height: 900 });
-    for (const id of [...FOUNDATIONS, 'templates-authlayout--default', ...LOADING_STORIES]) {
+    for (const id of [
+      ...FOUNDATIONS,
+      'templates-authlayout--default',
+      ...LOADING_STORIES,
+      ...BUTTON_STORIES,
+    ]) {
       await openStory(page, id, 'scheme:light');
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - window.innerWidth

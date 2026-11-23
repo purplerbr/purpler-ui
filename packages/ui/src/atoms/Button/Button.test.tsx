@@ -161,6 +161,31 @@ describe('Button', () => {
     expect(screen.getByRole('button', { name: 'Adicionar produto' })).toBeInTheDocument();
   });
 
+  it('keeps a long label whole as the accessible name, in every size and as a link', async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    const label = 'Doceria e Confeitaria Artesanal da Vó Maria — Unidade Centro';
+    render(
+      <>
+        <Button size="sm" onClick={onClick}>
+          {label}
+        </Button>
+        <Button size="lg" onClick={onClick}>
+          {label}
+        </Button>
+        <Button variant="link" onClick={onClick}>
+          {label}
+        </Button>
+      </>
+    );
+    const buttons = screen.getAllByRole('button', { name: label });
+
+    for (const button of buttons) await user.click(button);
+
+    expect(buttons).toHaveLength(3);
+    expect(onClick).toHaveBeenCalledTimes(3);
+  });
+
   it('has no accessibility violations in any variant or state', async () => {
     const { container } = render(
       <div>
