@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   setup:
-    name: Setup
+    name: Storybook setup
     # Fork PRs get a read-only token, so they have no preview.
     if: >-
       github.event_name == 'push' ||
@@ -98,7 +98,7 @@ jobs:
   preview:
     name: Publish the PR preview
     needs: build
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -130,7 +130,8 @@ jobs:
     name: Remove the PR preview
     if: >-
       github.event.action == 'closed' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

@@ -163,6 +163,48 @@ describe('GitHub workflows', () => {
     expect(jobs.get('pages')).toHaveProperty(['steps', 2, 'with', 'clean-exclude'], 'pr-preview/');
   });
 
+  it('lets only the expected actions run in the gh-pages deploy jobs, skipping Dependabot', () => {
+    const jobs = new Map(jobsOf(parse(readWorkflow('storybook-pages.yml'))));
+    const actions = (name: string): string[] =>
+      stepsOf(jobs.get(name)).flatMap((step) =>
+        typeof step.uses === 'string' ? [step.uses.split('@')[0] ?? ''] : []
+      );
+
+    expect(actions('pages')).toEqual([
+      'actions/checkout',
+      'actions/download-artifact',
+      'JamesIves/github-pages-deploy-action',
+    ]);
+    expect(actions('preview')).toEqual([
+      'actions/checkout',
+      'actions/download-artifact',
+      'rossjrw/pr-preview-action',
+    ]);
+    expect(actions('preview-remove')).toEqual(['actions/checkout', 'rossjrw/pr-preview-action']);
+    for (const name of ['preview', 'preview-remove']) {
+      expect(String(jobs.get(name)?.if), name).toContain("github.actor != 'dependabot[bot]'");
+    }
+  });
+
+  it('names no Storybook Pages job like a required check of the CI', () => {
+    const names = (file: string): unknown[] =>
+      jobsOf(parse(readWorkflow(file))).map(([, job]) => job.name);
+    const ciNames = names('ci.yml');
+
+    expect(names('storybook-pages.yml').filter((name) => ciNames.includes(name))).toEqual([]);
+  });
+
+  it('scans every ref with gitleaks except the generated gh-pages branch', () => {
+    const security: unknown = parse(readWorkflow('security.yml'));
+    const scan = stepsOf(new Map(jobsOf(security)).get('gitleaks')).find(
+      (step) => step.name === 'Scan commits'
+    );
+
+    expect(scan?.run).toBe(
+      '"$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose --log-opts="--exclude=refs/remotes/origin/gh-pages --exclude=refs/heads/gh-pages --all" .'
+    );
+  });
+
   it('keeps gitleaks with its default rules: no config, allowlist or ignore file', () => {
     for (const file of ['.gitleaks.toml', 'gitleaks.toml', '.gitleaksignore']) {
       expect(existsSync(new URL(`../../${file}`, import.meta.url)), file).toBe(false);
