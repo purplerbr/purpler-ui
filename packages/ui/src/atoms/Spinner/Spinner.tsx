@@ -22,9 +22,11 @@ export function Spinner({
   return (
     <span
       data-slot="spinner"
-      role="status"
       className={cn(spinnerLabelVariants({ size }), className)}
       {...props}
+      // status takes no name from content, so the label is also its name; props cannot replace either.
+      role="status"
+      aria-label={label}
     >
       <LoaderCircle aria-hidden="true" className={spinnerVariants({ size })} />
       {/* A still ring alone does not read as loading, so reduced motion reveals the text. */}
