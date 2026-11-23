@@ -17,6 +17,7 @@ const BUTTON_STORIES = [
   'atoms-button--loading',
 ] as const;
 const FORM_STORIES = ['atoms-checkbox--all-variants', 'molecules-alert--all-variants'] as const;
+const CONTENT_STORIES = ['atoms-heading--all-variants', 'molecules-card--all-variants'] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
@@ -43,12 +44,24 @@ async function expectNoAxeViolations(page: Page): Promise<void> {
   expect(found).toEqual([]);
 }
 
+// A story with only headings never asks for Figtree, so Chromium leaves it unloaded.
+async function expectHeadingFont(page: Page): Promise<void> {
+  const font = await page
+    .getByRole('heading')
+    .first()
+    .evaluate((element) => {
+      const { fontWeight } = getComputedStyle(element);
+      return `${fontWeight} 16px "Bricolage Grotesque"`;
+    });
+  expect(await page.evaluate((spec) => document.fonts.check(spec), font)).toBe(true);
+}
+
 // axe at phone width too: tables that scroll sideways only exist there (scrollable-region-focusable).
 const AXE_WIDTHS = [1280, 360] as const;
 
 for (const width of AXE_WIDTHS) {
   for (const scheme of SCHEMES) {
-    for (const id of [...FOUNDATIONS, ...BUTTON_STORIES, ...FORM_STORIES]) {
+    for (const id of [...FOUNDATIONS, ...BUTTON_STORIES, ...FORM_STORIES, ...CONTENT_STORIES]) {
       test(`${id} in ${scheme} at ${String(width)}px renders with the brand fonts and no WCAG violations`, async ({
         page,
       }, info) => {
@@ -58,7 +71,9 @@ for (const width of AXE_WIDTHS) {
         expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(
           scheme === 'dark'
         );
-        expect(await page.evaluate(() => document.fonts.check('600 16px Figtree'))).toBe(true);
+        if (id !== 'atoms-heading--all-variants')
+          expect(await page.evaluate(() => document.fonts.check('600 16px Figtree'))).toBe(true);
+        if (id === 'atoms-heading--all-variants') await expectHeadingFont(page);
         await expectNoAxeViolations(page);
         await page.screenshot({
           path: `test-results/screens/${info.project.name}/${String(width)}/${scheme}/${id}.png`,
