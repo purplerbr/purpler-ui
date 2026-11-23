@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import paleta from '../test/fixtures/paleta.json' with { type: 'json' };
 import { isInSrgbGamut, parseOklch, toHex } from './color';
 import { SCALE_STEPS, palette } from './palette';
-import { SEMANTIC_TOKENS, semantic, type ColorScheme } from './semantic';
+import { SEMANTIC_TOKENS, brandLogo, semantic, type ColorScheme } from './semantic';
 import { typography } from './typography';
 import { radius } from './radius';
 
@@ -35,6 +35,11 @@ describe('semantic', () => {
   it('declares the tokens in the same order as paleta.json', () => {
     expect(SEMANTIC_TOKENS).toEqual(Object.keys(paleta.semantico.light));
     expect(SEMANTIC_TOKENS).toEqual(Object.keys(paleta.semantico.dark));
+  });
+
+  it.each(SCHEMES)('takes the %s logo colors from the logo of paleta.json', (scheme) => {
+    expect(brandLogo[scheme]['brand-mark'].ref).toBe(paleta.logo[scheme].simbolo);
+    expect(brandLogo[scheme]['brand-wordmark'].ref).toBe(paleta.logo[scheme].wordmark);
   });
 
   it('keeps the base radius and the type families of the brand', () => {

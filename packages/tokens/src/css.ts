@@ -2,7 +2,14 @@ import { CONTRAST_MINIMUM, contrastRatio, formatOklch, parseOklch } from './colo
 import { fontStack, listFontFaces } from './fonts';
 import { motion } from './motion';
 import { RADIUS_STEPS, radius } from './radius';
-import { SEMANTIC_PAIRS, SEMANTIC_TOKENS, semantic, type SemanticToken } from './semantic';
+import {
+  BRAND_LOGO_TOKENS,
+  SEMANTIC_PAIRS,
+  SEMANTIC_TOKENS,
+  brandLogo,
+  semantic,
+  type SemanticToken,
+} from './semantic';
 import { shadow, type ShadowStep } from './shadow';
 import { spacing } from './spacing';
 import { STORE_FONTS, STORE_RADIUS, type StoreTheme } from './storeTheme';
@@ -24,8 +31,12 @@ function block(selector: string, declarations: Declarations): string {
 const colorVariables = (valueOf: (token: SemanticToken) => string): Declarations =>
   Object.fromEntries(SEMANTIC_TOKENS.map((token) => [`--${token}`, valueOf(token)]));
 
-const brandColors = (scheme: 'light' | 'dark'): Declarations =>
-  colorVariables((token) => semantic[scheme][token].oklch);
+const brandColors = (scheme: 'light' | 'dark'): Declarations => ({
+  ...colorVariables((token) => semantic[scheme][token].oklch),
+  ...Object.fromEntries(
+    BRAND_LOGO_TOKENS.map((token) => [`--${token}`, brandLogo[scheme][token].oklch])
+  ),
+});
 
 const elevationVariables = (scheme: 'light' | 'dark'): Declarations =>
   Object.fromEntries(SHADOW_STEPS.map((step) => [`--elevation-${step}`, shadow[scheme][step]]));
@@ -70,7 +81,12 @@ function textVariables(): Declarations {
 export function renderThemeCss(): string {
   const theme = {
     '--color-*': 'initial',
-    ...Object.fromEntries(SEMANTIC_TOKENS.map((token) => [`--color-${token}`, `var(--${token})`])),
+    ...Object.fromEntries(
+      [...SEMANTIC_TOKENS, ...BRAND_LOGO_TOKENS].map((token) => [
+        `--color-${token}`,
+        `var(--${token})`,
+      ])
+    ),
     '--font-*': 'initial',
     '--font-sans': 'var(--font-body)',
     '--font-display': 'var(--font-heading)',

@@ -21,8 +21,15 @@ export { motion } from './motion';
 export { SCALE_STEPS, palette, white } from './palette';
 export type { ColorValue, PaletteScale, ScaleName, ScaleStep } from './palette';
 export { RADIUS_STEPS, radius } from './radius';
-export { SEMANTIC_PAIRS, SEMANTIC_TOKENS, semantic } from './semantic';
+export {
+  BRAND_LOGO_TOKENS,
+  SEMANTIC_PAIRS,
+  SEMANTIC_TOKENS,
+  brandLogo,
+  semantic,
+} from './semantic';
 export type {
+  BrandLogoToken,
   ColorScheme,
   PaletteRef,
   SemanticColor,

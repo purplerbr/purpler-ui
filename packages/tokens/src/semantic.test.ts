@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { CONTRAST_MINIMUM, contrastRatio } from './color';
-import { SEMANTIC_PAIRS, SEMANTIC_TOKENS, semantic, type ColorScheme } from './semantic';
+import {
+  BRAND_LOGO_TOKENS,
+  SEMANTIC_PAIRS,
+  SEMANTIC_TOKENS,
+  brandLogo,
+  semantic,
+  type ColorScheme,
+} from './semantic';
 
 const CASES = (['light', 'dark'] as const).flatMap((scheme: ColorScheme) =>
   SEMANTIC_PAIRS.map((pair) => ({ scheme, ...pair }))
@@ -19,6 +26,23 @@ describe('semantic contrast (WCAG 2.2 AA)', () => {
       expect(contrastRatio(tokens[background].hex, tokens[foreground].hex)).toBeGreaterThanOrEqual(
         minimum
       );
+    }
+  );
+
+  const LOGO_CASES = (['light', 'dark'] as const).flatMap((scheme) =>
+    (['background', 'card'] as const).flatMap((background) =>
+      BRAND_LOGO_TOKENS.map((logo) => ({ scheme, background, logo }))
+    )
+  );
+
+  it.each(LOGO_CASES)(
+    '$scheme · $background × $logo reaches the UI graphics minimum',
+    ({ scheme, background, logo }) => {
+      const surface = semantic[scheme][background];
+      const color = brandLogo[scheme][logo];
+
+      expect(contrastRatio(surface.oklch, color.oklch)).toBeGreaterThanOrEqual(CONTRAST_MINIMUM.ui);
+      expect(contrastRatio(surface.hex, color.hex)).toBeGreaterThanOrEqual(CONTRAST_MINIMUM.ui);
     }
   );
 
