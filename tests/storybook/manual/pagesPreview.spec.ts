@@ -15,6 +15,14 @@ const STORIES = [
   'atoms-button--all-variants',
   'atoms-checkbox--all-variants',
   'molecules-alert--all-variants',
+  'atoms-heading--all-variants',
+  'molecules-card--all-variants',
+] as const;
+const COMPONENT_MATRIX = [
+  'atoms-checkbox--all-variants',
+  'molecules-alert--all-variants',
+  'atoms-heading--all-variants',
+  'molecules-card--all-variants',
 ] as const;
 // WebKit lacks requestIdleCallback, which the Storybook manager calls; it is not the library's.
 const KNOWN_ERROR = /requestIdleCallback/;
@@ -91,14 +99,14 @@ test('switches between light and dark from the toolbar', async ({ page }, info) 
   expect(problems).toEqual({ errors: [], badRequests: [] });
 });
 
-test('renders the Checkbox and Alert in light and dark at phone and desktop width', async ({
+test('renders the Checkbox, Alert, Heading and Card in light and dark at phone and desktop width', async ({
   page,
 }, info) => {
   const problems = watch(page);
   for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const scheme of ['light', 'dark']) {
-      for (const id of ['atoms-checkbox--all-variants', 'molecules-alert--all-variants']) {
+      for (const id of COMPONENT_MATRIX) {
         await page.goto(`${PAGES_URL}iframe.html?id=${id}&viewMode=story&globals=scheme:${scheme}`);
         await expect(page.locator('#storybook-root > *').first()).toBeVisible(MANAGER_LOAD);
         const overflow = await page.evaluate(
