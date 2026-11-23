@@ -5,8 +5,6 @@ export default defineConfig({
   testDir: 'tests/storybook',
   outputDir: 'test-results',
   fullyParallel: true,
-  // Some tests walk 14 stories with axe and full-page screenshots; WebKit needs more than 30 s.
-  timeout: 90_000,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
     baseURL: 'http://127.0.0.1:6006',

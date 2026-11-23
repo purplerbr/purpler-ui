@@ -89,16 +89,17 @@ const previewFrame = (page: Page): Frame => {
   return frame;
 };
 
+// A cold Storybook manager can take longer than 5 s to render under full parallel load.
+const MANAGER_LOAD = { timeout: 20_000 };
+
 test.describe('toolbar: theme and store preset from the Storybook UI', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test('switches to dark, applies a store preset, survives reload and back navigation', async ({
-    page,
-  }, info) => {
+  test('switches to dark and applies a store preset from the toolbar', async ({ page }, info) => {
     const errors = collectErrors(page);
     await page.goto('/?path=/story/atoms-button--default');
     const preview = page.frameLocator('#storybook-preview-iframe');
-    await expect(preview.getByRole('button', { name: 'Comprar agora' })).toBeVisible();
+    await expect(preview.getByRole('button', { name: 'Comprar agora' })).toBeVisible(MANAGER_LOAD);
     const brandPrimary = await previewFrame(page).evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()
     );
@@ -116,19 +117,40 @@ test.describe('toolbar: theme and store preset from the Storybook UI', () => {
     expect(storePrimary).not.toBe(brandPrimary);
     await page.screenshot({ path: shot(info.project.name, 'toolbar-dark-oceano') });
 
-    await page.reload();
-    await expect(preview.locator('html')).toHaveClass(/\bdark\b/);
-    await expect(preview.locator('#purpler-store-theme')).toHaveAttribute('data-store', 'oceano');
-
-    await page.goto('/?path=/story/atoms-button--loading');
-    await expect(preview.getByRole('button', { name: 'Salvando produto' })).toBeVisible();
-    await page.goBack();
-    await expect(preview.getByRole('button', { name: 'Comprar agora' })).toBeVisible();
-    await expect(preview.locator('html')).toHaveClass(/\bdark\b/);
-
     await page.getByRole('button', { name: /^Marca Purpler ou preset/ }).click();
     await page.getByRole('option', { name: 'Purpler (marca)' }).click();
     await expect(preview.locator('#purpler-store-theme')).toHaveAttribute('data-store', 'purpler');
+    expect(errors).toEqual([]);
+  });
+
+  const THEMED_DEFAULT = '/?path=/story/atoms-button--default&globals=scheme:dark;store:oceano';
+
+  test('keeps the chosen theme after a reload', async ({ page }) => {
+    const errors = collectErrors(page);
+    const preview = page.frameLocator('#storybook-preview-iframe');
+    await page.goto(THEMED_DEFAULT);
+    await expect(preview.getByRole('button', { name: 'Comprar agora' })).toBeVisible(MANAGER_LOAD);
+
+    await page.reload();
+    await expect(preview.locator('html')).toHaveClass(/\bdark\b/, MANAGER_LOAD);
+    await expect(preview.locator('#purpler-store-theme')).toHaveAttribute('data-store', 'oceano');
+    expect(errors).toEqual([]);
+  });
+
+  test('keeps the chosen theme after opening another story and going back', async ({ page }) => {
+    const errors = collectErrors(page);
+    const preview = page.frameLocator('#storybook-preview-iframe');
+    await page.goto(THEMED_DEFAULT);
+    await expect(preview.getByRole('button', { name: 'Comprar agora' })).toBeVisible(MANAGER_LOAD);
+
+    await page.getByRole('link', { name: 'Loading', exact: true }).click();
+    await expect(preview.getByRole('button', { name: 'Salvando produto' })).toBeVisible(
+      MANAGER_LOAD
+    );
+    await page.goBack();
+    await expect(preview.getByRole('button', { name: 'Comprar agora' })).toBeVisible(MANAGER_LOAD);
+    await expect(preview.locator('html')).toHaveClass(/\bdark\b/);
+    await expect(preview.locator('#purpler-store-theme')).toHaveAttribute('data-store', 'oceano');
     expect(errors).toEqual([]);
   });
 });
@@ -241,17 +263,23 @@ test.describe('Button keyboard in a real browser', () => {
 test.describe('every store preset in a real browser', () => {
   for (const preset of PRESETS) {
     for (const scheme of ['light', 'dark'] as const) {
-      test(`${preset} ${scheme}: no failing pair on Cores and Button is axe-clean`, async ({
-        page,
-      }, info) => {
+      const globals = `scheme:${scheme};store:${preset}`;
+
+      test(`${preset} ${scheme}: Cores has no failing pair and is axe-clean`, async ({ page }) => {
         const errors = collectErrors(page);
-        await openStory(page, 'fundamentos-cores--cores', `scheme:${scheme};store:${preset}`);
+        await openStory(page, 'fundamentos-cores--cores', globals);
 
         await expect(page.locator('#purpler-store-theme')).toHaveAttribute('data-store', preset);
         await expect(page.getByRole('cell', { name: 'Falha', exact: true })).toHaveCount(0);
         expect(await axeViolations(page)).toEqual([]);
+        expect(errors).toEqual([]);
+      });
 
-        await openStory(page, 'atoms-button--all-variants', `scheme:${scheme};store:${preset}`);
+      test(`${preset} ${scheme}: every Button variant is axe-clean`, async ({ page }, info) => {
+        const errors = collectErrors(page);
+        await openStory(page, 'atoms-button--all-variants', globals);
+
+        await expect(page.locator('#purpler-store-theme')).toHaveAttribute('data-store', preset);
         expect(await axeViolations(page)).toEqual([]);
         await page.screenshot({ path: shot(info.project.name, `preset-${preset}-${scheme}`) });
         expect(errors).toEqual([]);
@@ -264,26 +292,25 @@ for (const width of WIDTHS) {
   test.describe(`${String(width)}px`, () => {
     test.use({ viewport: { width, height: 900 } });
 
+    // One test per story keeps each one well under the default 30 s timeout, even in WebKit.
     for (const scheme of ['light', 'dark'] as const) {
-      test(`foundations and Button stories in ${scheme}: no overflow, no errors, axe-clean`, async ({
-        page,
-      }, info) => {
-        const errors = collectErrors(page);
-        for (const id of [...FOUNDATIONS, ...BUTTON_STORIES]) {
+      for (const id of [...FOUNDATIONS, ...BUTTON_STORIES]) {
+        test(`${id} in ${scheme}: no overflow, no errors, axe-clean`, async ({ page }, info) => {
+          const errors = collectErrors(page);
           await openStory(page, id, `scheme:${scheme}`);
           const overflow = await page.evaluate(
             () => document.documentElement.scrollWidth - window.innerWidth
           );
 
-          expect.soft(overflow, id).toBeLessThanOrEqual(0);
-          expect.soft(await axeViolations(page), id).toEqual([]);
+          expect.soft(overflow).toBeLessThanOrEqual(0);
+          expect.soft(await axeViolations(page)).toEqual([]);
           await page.screenshot({
             path: shot(info.project.name, `${String(width)}/${scheme}/${id}`),
             fullPage: true,
           });
-        }
-        expect(errors).toEqual([]);
-      });
+          expect(errors).toEqual([]);
+        });
+      }
     }
   });
 }
