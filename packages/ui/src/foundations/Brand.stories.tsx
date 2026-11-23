@@ -72,13 +72,13 @@ function BrandPage() {
 
       <Section
         title="Símbolo"
-        description="Um P cuja barriga é uma etiqueta de preço. O furo da etiqueta é o olho da letra, e a haste desce como o p minúsculo do nome."
+        description="Uma etiqueta de preço, o sinal mais universal do comércio, inclinada para cima como quem acabou de vender. O furo do barbante fica perto da ponta."
       >
         <div className="flex flex-wrap items-center gap-6">
           <div className="rounded-lg p-6" style={SAND}>
             <img
               src={symbol}
-              alt="Símbolo da Purpler: a letra P com a barriga em forma de etiqueta de preço"
+              alt="Símbolo da Purpler: uma etiqueta de preço inclinada para cima"
               width={96}
               height={96}
             />
@@ -110,7 +110,7 @@ function BrandPage() {
                   src={version.src}
                   alt={`Logo da Purpler, versão ${version.name.toLowerCase()}`}
                   height={40}
-                  width={205}
+                  width={207}
                 />
               </div>
               <figcaption className="text-small">
@@ -123,7 +123,7 @@ function BrandPage() {
 
       <Section
         title="Área de proteção e tamanho mínimo"
-        description="x é a largura da haste do símbolo (cerca de 30% da altura do logo). Deixe no mínimo x livre em todos os lados."
+        description="x é o vão entre o símbolo e o nome (cerca de 35% da altura do logo). Deixe no mínimo x livre em todos os lados."
       >
         <div className="flex flex-wrap items-center gap-6">
           <div className="rounded-lg p-6" style={SAND}>
@@ -132,7 +132,7 @@ function BrandPage() {
                 src={logoLight}
                 alt="Logo da Purpler com a área de proteção marcada em tracejado"
                 height={40}
-                width={205}
+                width={207}
               />
             </div>
           </div>
@@ -140,7 +140,7 @@ function BrandPage() {
         <DataTable label="Tamanho mínimo do logo" head={['Peça', 'Tela', 'Impresso']}>
           <tr>
             <td className={cell}>Logo completo</td>
-            <td className={cell}>20 px de altura (cerca de 102 px de largura)</td>
+            <td className={cell}>20 px de altura (cerca de 104 px de largura)</td>
             <td className={cell}>6 mm de altura</td>
           </tr>
           <tr>
@@ -159,7 +159,7 @@ function BrandPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Card>
             <div className="flex h-24 items-center justify-center rounded-md" style={SAND}>
-              <img src={logoLight} alt="Logo em cor sobre areia" height={32} width={164} />
+              <img src={logoLight} alt="Logo em cor sobre areia" height={32} width={166} />
             </div>
             <Verdict ok>versão em cor sobre areia ou branco.</Verdict>
           </Card>
@@ -169,14 +169,14 @@ function BrandPage() {
                 src={logoDark}
                 alt="Logo para fundo escuro sobre ameixa"
                 height={32}
-                width={164}
+                width={166}
               />
             </div>
             <Verdict ok>versão para fundo escuro sobre ameixa 900 ou 950.</Verdict>
           </Card>
           <Card>
             <div className="flex h-24 items-center justify-center rounded-md" style={GRAPE}>
-              <img src={logoWhite} alt="Logo branco sobre uva 600" height={32} width={164} />
+              <img src={logoWhite} alt="Logo branco sobre uva 600" height={32} width={166} />
             </div>
             <Verdict ok>versão branca sobre uva 600.</Verdict>
           </Card>
@@ -190,7 +190,7 @@ function BrandPage() {
                   src={logoLight}
                   alt={`Exemplo de uso incorreto: ${misuse.label}`}
                   height={32}
-                  width={164}
+                  width={166}
                   style={misuse.style}
                 />
               </div>
@@ -208,6 +208,16 @@ function BrandPage() {
               </span>
             </div>
             <Verdict ok={false}>digitar o nome em outra fonte.</Verdict>
+          </Card>
+          <Card>
+            <div className="flex h-24 items-center justify-center gap-2 rounded-md" style={SAND}>
+              <img src={symbol} alt="" height={20} width={20} />
+              <span className="text-small font-medium text-foreground">Etiquetas</span>
+            </div>
+            <Verdict ok={false}>
+              usar o símbolo como ícone de interface. Para etiquetas e preços, use o ícone tag do
+              lucide.
+            </Verdict>
           </Card>
         </div>
         <p className="text-muted-foreground">
