@@ -25,7 +25,7 @@
     "build-storybook": "yarn workspace @purplerbr/ui build-storybook",
     "pack:check": "node scripts/checkPack.ts",
     "changeset": "changeset",
-    "release": "yarn build && yarn pack:check && changeset publish --no-git-tag"
+    "release": "changeset publish --no-git-tag"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

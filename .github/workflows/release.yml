@@ -49,14 +49,13 @@ jobs:
     name: Security
     uses: ./.github/workflows/security.yml
 
-  publish:
-    name: Publish to GitHub Packages
+  package:
+    name: Build and check the packages
     needs: [setup, lint, typecheck, test, build, security]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    permissions:
-      contents: read
-      packages: write
+    outputs:
+      pending: ${{ steps.changesets.outputs.pending }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -87,8 +86,59 @@ jobs:
             echo "::notice::${pending} changeset(s) pending. Run yarn changeset version in a release PR; nothing was published."
           fi
 
-      - name: Build, check the package contents and publish
+      # Built without any write token; the publish job only receives this dist/.
+      - name: Build and check the package contents
         if: steps.changesets.outputs.pending == '0'
+        run: yarn build && yarn pack:check
+
+      - name: Upload the built packages
+        if: steps.changesets.outputs.pending == '0'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: packages-dist
+          path: |
+            packages/tokens/dist
+            packages/ui/dist
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish to GitHub Packages
+    needs: [setup, package]
+    if: needs.package.outputs.pending == '0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Restore node_modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      - name: Download the built packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: packages-dist
+          path: packages
+
+      # The only step that sees the write token; it publishes the downloaded dist/ and builds nothing.
+      - name: Publish
         run: yarn release
         env:
           GITHUB_PACKAGES_TOKEN: ${{ github.token }}

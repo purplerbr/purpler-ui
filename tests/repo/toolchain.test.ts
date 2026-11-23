@@ -20,13 +20,19 @@ describe('toolchain', () => {
     expect(existsSync(new URL('.yarn/releases/yarn-4.13.0.cjs', ROOT))).toBe(true);
   });
 
-  it('maps the @purplerbr scope to GitHub Packages, with the token from the environment', () => {
-    const yarnrc: unknown = parse(read('.yarnrc.yml'));
-
-    expect(yarnrc).toHaveProperty(['npmScopes', 'purplerbr'], {
-      npmAuthToken: '${GITHUB_PACKAGES_TOKEN:-}',
-      npmPublishRegistry: 'https://npm.pkg.github.com',
-      npmRegistryServer: 'https://npm.pkg.github.com',
+  it('keeps .yarnrc.yml exactly as reviewed: no audit exclusions, scope mapped to GitHub Packages', () => {
+    // Any extra key (npmAuditIgnoreAdvisories, npmAuditExcludePackages, another registry) fails here.
+    expect(parse(read('.yarnrc.yml'))).toEqual({
+      enableTelemetry: false,
+      nodeLinker: 'node-modules',
+      npmScopes: {
+        purplerbr: {
+          npmAuthToken: '${GITHUB_PACKAGES_TOKEN:-}',
+          npmPublishRegistry: 'https://npm.pkg.github.com',
+          npmRegistryServer: 'https://npm.pkg.github.com',
+        },
+      },
+      yarnPath: '.yarn/releases/yarn-4.13.0.cjs',
     });
   });
 

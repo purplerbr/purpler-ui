@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { isRecord } from './helpers';
@@ -10,6 +10,11 @@ const GATES = ['setup', 'lint', 'typecheck', 'test', 'build', 'security'];
 
 function readWorkflow(file: string): string {
   return readFileSync(new URL(file, WORKFLOWS_DIR), 'utf8');
+}
+
+function stepsOf(job: unknown): Record<string, unknown>[] {
+  if (!isRecord(job) || !Array.isArray(job.steps)) return [];
+  return job.steps.filter(isRecord);
 }
 
 function jobsOf(workflow: unknown): [string, Record<string, unknown>][] {
@@ -65,7 +70,7 @@ describe('GitHub workflows', () => {
       const text = readWorkflow(file);
 
       expect(text).not.toMatch(/id-token/);
-      expect(text).not.toMatch(/secrets\./);
+      expect(text).not.toMatch(/\bsecrets\b/);
       expect(text).not.toMatch(/pull_request_target|workflow_run/);
       expect(text).not.toMatch(/wrangler|cloudflare|CLOUDFLARE_|NPM_TOKEN|NODE_AUTH_TOKEN/i);
     }
@@ -77,24 +82,56 @@ describe('GitHub workflows', () => {
     }
   });
 
-  it('publishes with changeset publish, after the build and the package contents check', () => {
+  it('publishes with changeset publish (CLAUDE.md §8.8), with no build in the same command', () => {
     const manifest = JSON.parse(
       readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
     ) as {
       scripts: Record<string, string>;
     };
 
-    expect(manifest.scripts.release).toBe(
-      'yarn build && yarn pack:check && changeset publish --no-git-tag'
-    );
+    expect(manifest.scripts.release).toBe('changeset publish --no-git-tag');
   });
 
   it('releases only on push to main, after every gate, when no changeset is pending', () => {
     const release: unknown = parse(readWorkflow('release.yml'));
 
     expect(release).toHaveProperty('on', { push: { branches: ['main'] } });
-    expect(release).toHaveProperty(['jobs', 'publish', 'needs'], GATES);
-    expect(readWorkflow('release.yml')).toContain("if: steps.changesets.outputs.pending == '0'");
+    expect(release).toHaveProperty(['jobs', 'package', 'needs'], GATES);
+    expect(release).toHaveProperty(['jobs', 'publish', 'needs'], ['setup', 'package']);
+    expect(release).toHaveProperty(
+      ['jobs', 'publish', 'if'],
+      "needs.package.outputs.pending == '0'"
+    );
+  });
+
+  it('builds in a job without write access and publishes the built dist/ without building', () => {
+    const release: unknown = parse(readWorkflow('release.yml'));
+    const jobs = new Map(jobsOf(release));
+    const runs = (job: string): unknown[] =>
+      stepsOf(jobs.get(job)).flatMap((step) => (step.run === undefined ? [] : [step.run]));
+    const tokenSteps = jobsOf(release).flatMap(([job, definition]) =>
+      stepsOf(definition)
+        .filter((step) => JSON.stringify(step.env ?? {}).includes('github.token'))
+        .map((step) => `${job} › ${String(step.name)}`)
+    );
+
+    expect(jobs.get('package')).not.toHaveProperty('permissions');
+    expect(runs('package')).toContain('yarn build && yarn pack:check');
+    expect(runs('publish')).toEqual(['yarn release']);
+    expect(tokenSteps).toEqual(['publish › Publish']);
+    expect(readWorkflow('release.yml').match(/github\.token/g)).toHaveLength(1);
+  });
+
+  it('keeps gitleaks with its default rules: no config, allowlist or ignore file', () => {
+    for (const file of ['.gitleaks.toml', 'gitleaks.toml', '.gitleaksignore']) {
+      expect(existsSync(new URL(`../../${file}`, import.meta.url)), file).toBe(false);
+    }
+    expect(readWorkflow('security.yml')).not.toMatch(
+      /--config|gitleaks-ignore-path|GITLEAKS_CONFIG/
+    );
+    expect(readFileSync(new URL('../../.husky/pre-commit', import.meta.url), 'utf8')).not.toMatch(
+      /--config|gitleaks-ignore-path/
+    );
   });
 
   it('runs every gate on pull requests', () => {
