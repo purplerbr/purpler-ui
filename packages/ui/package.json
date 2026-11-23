@@ -36,6 +36,14 @@
       "types": "./dist/atoms/Heading/index.d.ts",
       "import": "./dist/atoms/Heading/index.js"
     },
+    "./skeleton": {
+      "types": "./dist/atoms/Skeleton/index.d.ts",
+      "import": "./dist/atoms/Skeleton/index.js"
+    },
+    "./spinner": {
+      "types": "./dist/atoms/Spinner/index.d.ts",
+      "import": "./dist/atoms/Spinner/index.js"
+    },
     "./text": {
       "types": "./dist/atoms/Text/index.d.ts",
       "import": "./dist/atoms/Text/index.js"

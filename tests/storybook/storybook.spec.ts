@@ -24,6 +24,11 @@ const CONTENT_STORIES = [
   'templates-authlayout--default',
   'templates-authlayout--callback',
 ] as const;
+const LOADING_STORIES = [
+  'atoms-spinner--all-variants',
+  'atoms-spinner--page-loading',
+  'atoms-skeleton--all-variants',
+] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
@@ -67,7 +72,13 @@ const AXE_WIDTHS = [1280, 360] as const;
 
 for (const width of AXE_WIDTHS) {
   for (const scheme of SCHEMES) {
-    for (const id of [...FOUNDATIONS, ...BUTTON_STORIES, ...FORM_STORIES, ...CONTENT_STORIES]) {
+    for (const id of [
+      ...FOUNDATIONS,
+      ...BUTTON_STORIES,
+      ...FORM_STORIES,
+      ...CONTENT_STORIES,
+      ...LOADING_STORIES,
+    ]) {
       test(`${id} in ${scheme} at ${String(width)}px renders with the brand fonts and no WCAG violations`, async ({
         page,
       }, info) => {
@@ -183,12 +194,47 @@ test('the loading button keeps the focus and ignores Enter', async ({ page, brow
   await expect(button).toHaveAttribute('aria-busy', 'true');
 });
 
+test('under reduced motion the spinner stops, shows its label and the skeleton stops pulsing', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openStory(page, 'atoms-spinner--default', 'scheme:light');
+  const status = page.getByRole('status');
+
+  await expect(status.getByText('Carregando…')).toBeVisible();
+  expect(await status.locator('svg').evaluate((icon) => getComputedStyle(icon).animationName)).toBe(
+    'none'
+  );
+
+  await openStory(page, 'atoms-skeleton--default', 'scheme:light');
+  expect(
+    await page
+      .locator('[data-slot="skeleton"]')
+      .evaluate((block) => getComputedStyle(block).animationName)
+  ).toBe('none');
+});
+
+test('with motion allowed the spinner turns and keeps its label for screen readers only', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await openStory(page, 'atoms-spinner--default', 'scheme:light');
+  const status = page.getByRole('status');
+
+  await expect(status).toHaveText('Carregando…');
+  // sr-only clips the text to a 1px box, which Playwright still counts as visible.
+  expect((await status.getByText('Carregando…').boundingBox())?.width).toBeLessThanOrEqual(1);
+  expect(await status.locator('svg').evaluate((icon) => getComputedStyle(icon).animationName)).toBe(
+    'spin'
+  );
+});
+
 for (const width of [360, 768, 1280]) {
   test(`foundation pages and the auth layout have no horizontal scroll at ${String(width)}px`, async ({
     page,
   }, info) => {
     await page.setViewportSize({ width, height: 900 });
-    for (const id of [...FOUNDATIONS, 'templates-authlayout--default']) {
+    for (const id of [...FOUNDATIONS, 'templates-authlayout--default', ...LOADING_STORIES]) {
       await openStory(page, id, 'scheme:light');
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - window.innerWidth

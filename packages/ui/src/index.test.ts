@@ -17,6 +17,8 @@ describe('@purplerbr/ui public API', () => {
       'CardTitle',
       'Checkbox',
       'Heading',
+      'Skeleton',
+      'Spinner',
       'Text',
       'alertVariants',
       'authLayoutVariants',
@@ -26,6 +28,8 @@ describe('@purplerbr/ui public API', () => {
       'checkboxVariants',
       'cn',
       'headingVariants',
+      'skeletonVariants',
+      'spinnerVariants',
       'textVariants',
     ]);
   });
