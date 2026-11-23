@@ -16,6 +16,7 @@ const BUTTON_STORIES = [
   'atoms-button--default',
   'atoms-button--loading',
   'atoms-button--long-label',
+  'atoms-button--long-word',
   'atoms-button--link-in-text',
 ] as const;
 const FORM_STORIES = ['atoms-checkbox--all-variants', 'molecules-alert--all-variants'] as const;
@@ -177,28 +178,34 @@ test('single-line buttons keep their fixed height in every size, with or without
   }
 });
 
-test('a long label wraps inside the button and the viewport at 360px', async ({ page }, info) => {
-  await page.setViewportSize({ width: 360, height: 800 });
-  await openStory(page, 'atoms-button--long-label', 'scheme:light');
-  const button = page.getByRole('button', { name: /Doceria e Confeitaria/ });
+const LONG_LABELS = [
+  ['long-label', /Doceria e Confeitaria/],
+  ['long-word', /MinhaLojaDeRoupas/],
+] as const;
 
-  const box = await button.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    return {
-      overflow: element.scrollWidth - element.clientWidth,
-      left: rect.left,
-      right: rect.right,
-      height: rect.height,
-    };
+for (const [story, name] of LONG_LABELS) {
+  test(`${story} wraps inside the button and the viewport at 360px`, async ({ page }, info) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await openStory(page, `atoms-button--${story}`, 'scheme:light');
+
+    const box = await page.getByRole('button', { name }).evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        overflow: element.scrollWidth - element.clientWidth,
+        left: rect.left,
+        right: rect.right,
+        height: rect.height,
+      };
+    });
+    expect(box.overflow).toBeLessThanOrEqual(0);
+    expect(box.left).toBeGreaterThanOrEqual(0);
+    expect(box.right).toBeLessThanOrEqual(360);
+    expect(box.height).toBeGreaterThan(40);
+    await page.screenshot({
+      path: `test-results/screens/${info.project.name}/360/button-${story}.png`,
+    });
   });
-  expect(box.overflow).toBeLessThanOrEqual(0);
-  expect(box.left).toBeGreaterThanOrEqual(0);
-  expect(box.right).toBeLessThanOrEqual(360);
-  expect(box.height).toBeGreaterThan(40);
-  await page.screenshot({
-    path: `test-results/screens/${info.project.name}/360/button-long-label.png`,
-  });
-});
+}
 
 test('a link-variant button lines up with the text next to it', async ({ page }, info) => {
   await openStory(page, 'atoms-button--link-in-text', 'scheme:light');

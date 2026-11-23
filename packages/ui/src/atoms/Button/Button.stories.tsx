@@ -109,6 +109,11 @@ export const LongLabel: Story = {
   globals: { viewport: { value: 'phone360', isRotated: false } },
 };
 
+export const LongWord: Story = {
+  ...LongLabel,
+  args: { ...LongLabel.args, children: 'MinhaLojaDeRoupasFemininasEAcessoriosDaVilaMariana' },
+};
+
 export const LinkInText: Story = {
   args: { variant: 'link', size: 'sm', children: VARIANT_LABELS.link },
   render: (args) => (

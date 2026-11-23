@@ -23,9 +23,10 @@ export const buttonVariants = cva(
       },
       size: {
         // py + line height + outline border stays under min-h: one line keeps the old height.
-        sm: 'min-h-8 px-3 py-1 text-small',
-        md: 'min-h-10 px-4 py-2 text-small',
-        lg: 'min-h-12 px-6 py-2.5 text-body',
+        // wrap-anywhere breaks a single word (a store name without spaces) instead of overflowing.
+        sm: 'min-h-8 px-3 py-1 text-small wrap-anywhere',
+        md: 'min-h-10 px-4 py-2 text-small wrap-anywhere',
+        lg: 'min-h-12 px-6 py-2.5 text-body wrap-anywhere',
         icon: 'size-10',
       },
     },
