@@ -17,7 +17,13 @@ const BUTTON_STORIES = [
   'atoms-button--loading',
 ] as const;
 const FORM_STORIES = ['atoms-checkbox--all-variants', 'molecules-alert--all-variants'] as const;
-const CONTENT_STORIES = ['atoms-heading--all-variants', 'molecules-card--all-variants'] as const;
+const CONTENT_STORIES = [
+  'atoms-heading--all-variants',
+  'molecules-card--all-variants',
+  'atoms-text--all-variants',
+  'templates-authlayout--default',
+  'templates-authlayout--callback',
+] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
@@ -178,14 +184,20 @@ test('the loading button keeps the focus and ignores Enter', async ({ page, brow
 });
 
 for (const width of [360, 768, 1280]) {
-  test(`foundation pages have no horizontal scroll at ${String(width)}px`, async ({ page }) => {
+  test(`foundation pages and the auth layout have no horizontal scroll at ${String(width)}px`, async ({
+    page,
+  }, info) => {
     await page.setViewportSize({ width, height: 900 });
-    for (const id of FOUNDATIONS) {
+    for (const id of [...FOUNDATIONS, 'templates-authlayout--default']) {
       await openStory(page, id, 'scheme:light');
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - window.innerWidth
       );
       expect(overflow, id).toBeLessThanOrEqual(0);
     }
+    await page.screenshot({
+      path: `test-results/screens/${info.project.name}/${String(width)}/auth-layout.png`,
+      fullPage: true,
+    });
   });
 }

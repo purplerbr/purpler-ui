@@ -7,6 +7,7 @@ describe('@purplerbr/ui public API', () => {
       'Alert',
       'AlertDescription',
       'AlertTitle',
+      'AuthLayout',
       'Button',
       'Card',
       'CardContent',
@@ -16,13 +17,16 @@ describe('@purplerbr/ui public API', () => {
       'CardTitle',
       'Checkbox',
       'Heading',
+      'Text',
       'alertVariants',
+      'authLayoutVariants',
       'buttonVariants',
       'cardVariants',
       'checkboxFieldVariants',
       'checkboxVariants',
       'cn',
       'headingVariants',
+      'textVariants',
     ]);
   });
 });

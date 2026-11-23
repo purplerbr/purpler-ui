@@ -4,6 +4,8 @@ export { Checkbox, checkboxFieldVariants, checkboxVariants } from './atoms/Check
 export type { CheckboxProps } from './atoms/Checkbox';
 export { Heading, headingVariants } from './atoms/Heading';
 export type { HeadingLevel, HeadingProps, HeadingVariants } from './atoms/Heading';
+export { Text, textVariants } from './atoms/Text';
+export type { TextElement, TextProps, TextVariants } from './atoms/Text';
 export { Alert, AlertDescription, AlertTitle, alertVariants } from './molecules/Alert';
 export type { AlertProps, AlertVariants } from './molecules/Alert';
 export {
@@ -16,4 +18,6 @@ export {
   cardVariants,
 } from './molecules/Card';
 export type { CardProps } from './molecules/Card';
+export { AuthLayout, authLayoutVariants } from './templates/AuthLayout';
+export type { AuthLayoutProps } from './templates/AuthLayout';
 export { cn } from './utils/cn';
