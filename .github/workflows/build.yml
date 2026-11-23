@@ -76,7 +76,16 @@ jobs:
           key: ${{ inputs.cache-key }}
           fail-on-cache-miss: true
 
+      # A release PR (yarn changeset version output) consumes the changesets on purpose.
       - name: Changeset status
-        run: yarn changeset status --since="origin/${BASE_REF}"
+        run: |
+          changed=$(git diff --name-only "origin/${BASE_REF}...HEAD")
+          deleted=$(git diff --name-only --diff-filter=D "origin/${BASE_REF}...HEAD" -- '.changeset/*.md')
+          if [ -n "${deleted}" ] && printf '%s\n' "${changed}" | grep -qE '^packages/[^/]+/CHANGELOG\.md$' \
+            && ! printf '%s\n' "${changed}" | grep -vqE '^(\.changeset/[^/]+\.md|packages/[^/]+/(package\.json|CHANGELOG\.md))$'; then
+            echo "::notice::Release PR (changeset version output): changeset check skipped."
+            exit 0
+          fi
+          yarn changeset status --since="origin/${BASE_REF}"
         env:
           BASE_REF: ${{ github.base_ref }}
