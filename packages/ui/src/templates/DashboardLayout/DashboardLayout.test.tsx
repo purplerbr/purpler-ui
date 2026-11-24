@@ -193,10 +193,11 @@ describe('DashboardLayout', () => {
   it('closes the menu when a link is followed and leaves the focus to the new page', async () => {
     const user = userEvent.setup();
     // Stands in for a router link, which prevents the full page load.
-    const renderLink = ({ href, children, ...props }: DashboardLinkProps) => (
+    const renderLink = ({ href, className, children, ...props }: DashboardLinkProps) => (
       <a
         href={href}
-        {...props}
+        className={className}
+        aria-current={props['aria-current']}
         onClick={(event) => {
           event.preventDefault();
         }}
@@ -210,7 +211,8 @@ describe('DashboardLayout', () => {
     await user.click(within(menu).getByRole('link', { name: 'Produtos' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Abrir menu' })).not.toHaveFocus();
+    // Neither the menu button nor the logo: the app moves the focus to the new page's h1.
+    expect(document.body).toHaveFocus();
   });
 
   it.each([

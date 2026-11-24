@@ -1502,7 +1502,8 @@ test('following a link from the dashboard menu closes it without sending the foc
 
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(page).toHaveURL(/#pedidos$/);
-  await expect(page.getByRole('button', { name: 'Abrir menu' })).not.toBeFocused();
+  // Neither the menu button nor the logo: the app moves the focus to the new page's h1.
+  await expect(page.locator('body')).toBeFocused();
 });
 
 test('while the store loads, the dashboard announces it and hides the store slot', async ({
