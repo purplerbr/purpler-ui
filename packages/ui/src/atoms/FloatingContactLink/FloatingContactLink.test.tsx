@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MessageCircle } from 'lucide-react';
+import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';
 import { FloatingContactLink } from './FloatingContactLink';
@@ -55,6 +56,30 @@ describe('FloatingContactLink', () => {
     expect(link).toHaveFocus();
     expect(ref.current).toBe(link);
     expect(link).toHaveAttribute('id', 'contato');
+  });
+
+  it('keeps target and rel when an untyped spread tries to override them', () => {
+    const hostile = { href: 'https://example.com/chat', target: '_self', rel: 'opener' };
+    renderLink(hostile);
+
+    const link = screen.getByRole('link', { name: NAME });
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('never renders a javascript: href, on the client or the server', () => {
+    const payloads = ['javascript:alert(1)', ' JaVaScRiPt:alert(1)'];
+    for (const href of payloads) {
+      const { unmount } = renderLink({ href });
+      expect(screen.getByRole('link', { name: NAME }).getAttribute('href')).not.toMatch(/alert/i);
+      unmount();
+
+      const html = renderToString(
+        <FloatingContactLink href={href} icon={<MessageCircle />} label="Conversar" />
+      );
+      const link = new DOMParser().parseFromString(html, 'text/html').querySelector('a');
+      expect(link?.getAttribute('href')).not.toMatch(/alert/i);
+    }
   });
 
   it('has no accessibility violations', async () => {

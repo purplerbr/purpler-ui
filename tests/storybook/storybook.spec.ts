@@ -809,12 +809,16 @@ const contains = (outer: Box, inner: Box): boolean =>
   inner.y + inner.height <= outer.y + outer.height;
 
 // True when the topmost element at the link's center is not the link: something covers it.
+// A modal sets pointer-events: none on the body, which hit testing skips, so restore it first.
 async function isCovered(page: Page): Promise<boolean> {
   return page.evaluate(() => {
-    const link = document.querySelector('[data-slot="floating-contact-link"]');
+    const link = document.querySelector<HTMLElement>('[data-slot="floating-contact-link"]');
     if (!link) return false;
     const { x, y, width, height } = link.getBoundingClientRect();
-    return !link.contains(document.elementFromPoint(x + width / 2, y + height / 2));
+    link.style.pointerEvents = 'auto';
+    const covered = !link.contains(document.elementFromPoint(x + width / 2, y + height / 2));
+    link.style.pointerEvents = '';
+    return covered;
   });
 }
 
@@ -841,6 +845,31 @@ for (const width of [360, 1280]) {
     });
   });
 }
+
+// Desktop browsers report a zero safe area, so check the offsets the browser parsed for the link.
+test('the contact link offsets add the safe-area insets to its 16px gap', async ({ page }) => {
+  await openStory(page, 'atoms-floatingcontactlink--default', 'scheme:light');
+
+  const offsets = await page.evaluate(() => {
+    const link = document.querySelector('[data-slot="floating-contact-link"]');
+    const found: Record<string, string> = {};
+    const visit = (rules: CSSRuleList) => {
+      for (const rule of rules) {
+        if (rule instanceof CSSGroupingRule) visit(rule.cssRules);
+        if (!(rule instanceof CSSStyleRule) || !link?.matches(rule.selectorText)) continue;
+        for (const side of ['right', 'bottom']) {
+          const value = rule.style.getPropertyValue(side);
+          if (value) found[side] = value.replaceAll(' ', '');
+        }
+      }
+    };
+    for (const sheet of document.styleSheets) visit(sheet.cssRules);
+    return found;
+  });
+
+  expect(offsets.right).toContain('env(safe-area-inset-right)');
+  expect(offsets.bottom).toContain('env(safe-area-inset-bottom)');
+});
 
 test('the contact link is reachable with Tab and shows a 2px focus outline', async ({
   page,
