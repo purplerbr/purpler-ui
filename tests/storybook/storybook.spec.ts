@@ -27,6 +27,7 @@ const FORM_STORIES = [
 const CONTENT_STORIES = [
   'atoms-heading--all-variants',
   'atoms-logo--all-variants',
+  'molecules-accordion--all-variants',
   'molecules-card--all-variants',
   'atoms-text--all-variants',
   'templates-authlayout--default',
@@ -365,6 +366,51 @@ test('the checkbox is reachable with Tab, toggles with Space and shows the focus
   await expect(checkbox).not.toBeChecked();
 });
 
+test('the accordion opens with Enter, closes with Space and shows the focus outline', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'molecules-accordion--default', 'scheme:light');
+  const question = page.getByText('Preciso ter CNPJ para abrir minha loja?');
+  const answer = page.getByText(/Você pode começar com CPF/);
+
+  await expect(answer).toBeHidden();
+  await page.keyboard.press(tabKey(browserName));
+  await expect(question).toBeFocused();
+  expect(await question.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe(
+    'solid'
+  );
+  await page.keyboard.press('Enter');
+  await expect(answer).toBeVisible();
+  await page.keyboard.press('Space');
+  await expect(answer).toBeHidden();
+});
+
+test('accordion items sharing a name keep only one open', async ({ page }) => {
+  await openStory(page, 'molecules-accordion--one-at-a-time', 'scheme:light');
+
+  await page.getByText('Preciso ter CNPJ para abrir minha loja?').click();
+  await page.getByText('Posso usar o domínio da minha marca?').click();
+
+  await expect(page.locator('details[open]')).toHaveCount(1);
+  await expect(page.getByText(/Aponte o seu domínio/)).toBeVisible();
+});
+
+test('the accordion markup opens and closes with JavaScript off', async ({ page, browser }) => {
+  await openStory(page, 'molecules-accordion--default', 'scheme:light');
+  const html = await page.locator('#storybook-root').innerHTML();
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const noJs = await context.newPage();
+
+  await noJs.setContent(`<!doctype html><html lang="pt-BR"><body>${html}</body></html>`);
+  const answer = noJs.getByText(/valor vai direto para ela/);
+  expect(await answer.count()).toBe(1);
+  await expect(answer).toBeHidden();
+  await noJs.getByText('O dinheiro das vendas cai na minha conta?').click();
+  await expect(answer).toBeVisible();
+  await context.close();
+});
+
 test('a page h1 focused by script (tabIndex -1) shows no focus ring', async ({ page }) => {
   await openStory(page, 'atoms-heading--page-title', 'scheme:light');
   const heading = page.getByRole('heading', { level: 1 });
@@ -436,6 +482,7 @@ for (const width of [360, 768, 1280]) {
       'templates-authlayout--default',
       'atoms-logo--all-variants',
       'atoms-badge--all-variants',
+      'molecules-accordion--all-variants',
       ...LOADING_STORIES,
       ...BUTTON_STORIES,
     ]) {

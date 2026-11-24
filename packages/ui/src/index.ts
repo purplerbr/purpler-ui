@@ -14,6 +14,22 @@ export { Spinner, spinnerLabelVariants, spinnerVariants } from './atoms/Spinner'
 export type { SpinnerProps, SpinnerVariants } from './atoms/Spinner';
 export { Text, textVariants } from './atoms/Text';
 export type { TextElement, TextProps, TextVariants } from './atoms/Text';
+export {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  accordionContentVariants,
+  accordionItemVariants,
+  accordionTriggerVariants,
+  accordionVariants,
+} from './molecules/Accordion';
+export type {
+  AccordionContentProps,
+  AccordionItemProps,
+  AccordionProps,
+  AccordionTriggerProps,
+} from './molecules/Accordion';
 export { Alert, AlertDescription, AlertTitle, alertVariants } from './molecules/Alert';
 export type { AlertProps, AlertVariants } from './molecules/Alert';
 export {

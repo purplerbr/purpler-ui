@@ -4,6 +4,10 @@ import * as ui from './index';
 describe('@purplerbr/ui public API', () => {
   it('exports the components and utilities that apps import from the root', () => {
     expect(Object.keys(ui).sort()).toEqual([
+      'Accordion',
+      'AccordionContent',
+      'AccordionItem',
+      'AccordionTrigger',
       'Alert',
       'AlertDescription',
       'AlertTitle',
@@ -22,6 +26,10 @@ describe('@purplerbr/ui public API', () => {
       'Skeleton',
       'Spinner',
       'Text',
+      'accordionContentVariants',
+      'accordionItemVariants',
+      'accordionTriggerVariants',
+      'accordionVariants',
       'alertVariants',
       'authLayoutVariants',
       'badgeVariants',
