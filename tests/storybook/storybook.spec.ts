@@ -33,6 +33,16 @@ const CONTENT_STORIES = [
   'templates-authlayout--default',
   'templates-authlayout--callback',
 ] as const;
+const LANDING_STORIES = [
+  'molecules-sheet--all-variants',
+  'molecules-emptystate--all-variants',
+  'organisms-marketingheader--all-variants',
+  'organisms-marketingfooter--all-variants',
+  'organisms-pricingcard--all-variants',
+  'organisms-pricingtable--all-variants',
+  'templates-marketinglayout--default',
+  'templates-marketinglayout--not-found',
+] as const;
 const LOADING_STORIES = [
   'atoms-spinner--all-variants',
   'atoms-spinner--page-loading',
@@ -49,14 +59,13 @@ async function openStory(page: Page, id: string, globals: string): Promise<void>
   });
 }
 
-async function expectNoAxeViolations(page: Page): Promise<void> {
+// `wholePage` covers a modal Sheet, which renders in a portal outside #storybook-root.
+async function expectNoAxeViolations(page: Page, wholePage = false): Promise<void> {
   let found: string[] = [];
   // Storybook's a11y addon runs axe on render too; retry while that run holds the shared axe.
   await expect(async () => {
-    const results = await new AxeBuilder({ page })
-      .include('#storybook-root')
-      .withTags(WCAG_TAGS)
-      .analyze();
+    const builder = new AxeBuilder({ page }).withTags(WCAG_TAGS);
+    const results = await (wholePage ? builder : builder.include('#storybook-root')).analyze();
     found = results.violations.flatMap(({ id, nodes }) =>
       nodes.map((node) => `${id}: ${node.target.join(' ')} · ${node.failureSummary ?? ''}`)
     );
@@ -86,6 +95,7 @@ for (const width of AXE_WIDTHS) {
       ...BUTTON_STORIES,
       ...FORM_STORIES,
       ...CONTENT_STORIES,
+      ...LANDING_STORIES,
       ...LOADING_STORIES,
     ]) {
       test(`${id} in ${scheme} at ${String(width)}px renders with the brand fonts and no WCAG violations`, async ({
@@ -510,6 +520,7 @@ for (const width of [360, 768, 1280]) {
       'atoms-logo--all-variants',
       'atoms-badge--all-variants',
       'molecules-accordion--all-variants',
+      ...LANDING_STORIES,
       ...LOADING_STORIES,
       ...BUTTON_STORIES,
     ]) {
@@ -525,3 +536,250 @@ for (const width of [360, 768, 1280]) {
     });
   });
 }
+
+const focusedInside = (page: Page, selector: string): Promise<boolean> =>
+  page.evaluate(
+    (css) => document.querySelector(css)?.contains(document.activeElement) ?? false,
+    selector
+  );
+
+test('the sheet opens with the keyboard, keeps Tab inside, closes on Esc and returns the focus', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'molecules-sheet--default', 'scheme:light');
+  const trigger = page.getByRole('button', { name: 'Ver resumo do pedido' });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Resumo do pedido' });
+  await expect(dialog).toBeVisible();
+  for (let step = 0; step < 4; step += 1) {
+    await page.keyboard.press(tabKey(browserName));
+    expect(await focusedInside(page, '[role="dialog"]')).toBe(true);
+  }
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+for (const width of AXE_WIDTHS) {
+  for (const scheme of SCHEMES) {
+    test(`the open sheet in ${scheme} at ${String(width)}px has no WCAG violations`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width, height: 800 });
+      await openStory(page, 'molecules-sheet--open', `scheme:${scheme}`);
+
+      await expect(page.getByRole('dialog', { name: 'Resumo do pedido' })).toBeVisible();
+      await expectNoAxeViolations(page, true);
+      await page.screenshot({
+        path: `test-results/screens/${info.project.name}/${String(width)}/${scheme}/sheet-open.png`,
+      });
+    });
+  }
+}
+
+test('the header skip link shows on the first Tab and moves the focus to the main content', async ({
+  page,
+  browserName,
+}, info) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openStory(page, 'organisms-marketingheader--default', 'scheme:light');
+  const skip = page.getByRole('link', { name: 'Pular para o conteúdo' });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(skip).toBeFocused();
+  expect((await skip.boundingBox())?.width).toBeGreaterThan(24);
+  await page.screenshot({ path: `test-results/screens/${info.project.name}/header-skip-link.png` });
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#conteudo')).toBeFocused();
+});
+
+test('at 1280px the header shows the nav in the bar, hides the menu button and marks the page', async ({
+  page,
+  browserName,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openStory(page, 'organisms-marketingheader--current-page', 'scheme:light');
+  const nav = page.getByRole('navigation', { name: 'Principal' });
+
+  await expect(nav.getByRole('link', { name: 'Recursos' })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Planos' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('button', { name: 'Abrir menu' })).toBeHidden();
+  const order: string[] = [];
+  for (let step = 0; step < 7; step += 1) {
+    await page.keyboard.press(tabKey(browserName));
+    order.push(await page.evaluate(() => document.activeElement?.textContent ?? ''));
+  }
+  expect(order).toEqual([
+    'Pular para o conteúdo',
+    '',
+    'Recursos',
+    'Como funciona',
+    'Planos',
+    'Dúvidas',
+    'Começar grátis',
+  ]);
+});
+
+for (const scheme of SCHEMES) {
+  test(`at 360px in ${scheme} the header menu opens in a sheet, closes on Esc and returns the focus`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await openStory(page, 'organisms-marketingheader--current-page', `scheme:${scheme}`);
+    const button = page.getByRole('button', { name: 'Abrir menu' });
+
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Recursos' })).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Começar grátis' })).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    await button.focus();
+    await page.keyboard.press('Enter');
+    const menu = page.getByRole('dialog', { name: 'Menu' });
+    await expect(menu.getByRole('link', { name: 'Planos' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    await expectNoAxeViolations(page, true);
+    await page.screenshot({
+      path: `test-results/screens/${info.project.name}/360/${scheme}/header-menu-open.png`,
+    });
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await expect(button).toBeFocused();
+  });
+}
+
+test('following a link from the header menu closes it and moves to the section', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'templates-marketinglayout--default', 'scheme:light');
+
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await page.getByRole('dialog', { name: 'Menu' }).getByRole('link', { name: 'Dúvidas' }).click();
+
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(page).toHaveURL(/#duvidas$/);
+  await expect(page.getByRole('button', { name: 'Abrir menu' })).not.toBeFocused();
+});
+
+for (const width of [360, 1280]) {
+  for (const scheme of SCHEMES) {
+    test(`without JavaScript at ${String(width)}px in ${scheme} the header shows the logo, the CTA and the links`, async ({
+      page,
+      browser,
+    }, info) => {
+      await openStory(page, 'templates-marketinglayout--default', `scheme:${scheme}`);
+      // The rendered page, styles included, served again to a context that cannot run scripts.
+      const html = (await page.content()).replaceAll(/<script\b[\s\S]*?<\/script>/g, '');
+      const origin = new URL(page.url()).origin;
+      const context = await browser.newContext({
+        javaScriptEnabled: false,
+        viewport: { width, height: 900 },
+      });
+      const noJs = await context.newPage();
+      await noJs.route(`${origin}/no-js.html`, (route) =>
+        route.fulfill({ contentType: 'text/html', body: html })
+      );
+      await noJs.goto(`${origin}/no-js.html`);
+
+      const banner = noJs.getByRole('banner');
+      expect(await noJs.evaluate(() => matchMedia('(scripting: none)').matches)).toBe(true);
+      await expect(banner.getByRole('img', { name: 'Purpler, página inicial' })).toBeVisible();
+      await expect(banner.getByRole('link', { name: 'Começar grátis' })).toBeVisible();
+      for (const label of ['Recursos', 'Planos', 'Dúvidas'])
+        await expect(banner.getByRole('link', { name: label })).toBeVisible();
+      await expect(banner.getByRole('button', { name: 'Abrir menu' })).toBeHidden();
+      expect(
+        await noJs.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+      ).toBeLessThanOrEqual(0);
+      await noJs.screenshot({
+        path: `test-results/screens/${info.project.name}/${String(width)}/${scheme}/header-no-js.png`,
+      });
+      await banner.getByRole('link', { name: 'Dúvidas' }).click();
+      await expect(noJs).toHaveURL(/#duvidas$/);
+      await context.close();
+    });
+  }
+}
+
+test('at 360px the pricing table scrolls inside its focusable region, not the page', async ({
+  page,
+  browserName,
+}, info) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'organisms-pricingtable--default', 'scheme:light');
+  const region = page.getByRole('region', { name: 'Comparação dos planos da Purpler' });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(region).toBeFocused();
+  expect(await region.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe('solid');
+  expect(await region.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+  // WebKit sometimes drops the first arrow right after the focus moves; a person just presses again.
+  await expect(async () => {
+    await page.keyboard.press('ArrowRight');
+    expect(await region.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  }).toPass({ timeout: 5_000 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+  ).toBeLessThanOrEqual(0);
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/360/pricing-table-focus.png`,
+  });
+});
+
+test('every pricing card CTA is named by its text and described by its plan', async ({ page }) => {
+  await openStory(page, 'organisms-pricingcard--all-variants', 'scheme:light');
+
+  await expect(
+    page.getByRole('link', { name: 'Assinar o Profissional' })
+  ).toHaveAccessibleDescription('Profissional');
+  await expect(page.getByText('Mais popular')).toBeVisible();
+});
+
+// Storybook pads padded stories by 24 px, so drop it to test a true 360 px page.
+for (const id of ['organisms-pricingtable--default', 'organisms-pricingcard--all-variants']) {
+  test(`${id} at a true 360px, without the story padding, has no page horizontal scroll`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await openStory(page, id, 'scheme:light');
+    await page.addStyleTag({ content: 'body { padding: 0 !important; margin: 0 !important; }' });
+
+    expect(await page.evaluate(() => document.body.getBoundingClientRect().width)).toBe(360);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+    ).toBeLessThanOrEqual(0);
+  });
+}
+
+test('at a true 360px the pricing table keeps its row labels pinned while the plans scroll', async ({
+  page,
+  browserName,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'organisms-pricingtable--default', 'scheme:light');
+  await page.addStyleTag({ content: 'body { padding: 0 !important; margin: 0 !important; }' });
+  const region = page.getByRole('region', { name: 'Comparação dos planos da Purpler' });
+  const labelOffset = () =>
+    region.evaluate((element) => {
+      const label = element.querySelector('tbody th');
+      return Math.round(
+        (label?.getBoundingClientRect().left ?? -1) - element.getBoundingClientRect().left
+      );
+    });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(region).toBeFocused();
+  const before = await labelOffset();
+  await expect(async () => {
+    await page.keyboard.press('ArrowRight');
+    expect(await region.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  }).toPass({ timeout: 5_000 });
+  expect(await labelOffset()).toBe(before);
+});
