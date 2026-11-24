@@ -21,6 +21,10 @@ const BUTTON_STORIES = [
 ] as const;
 const FORM_STORIES = [
   'atoms-checkbox--all-variants',
+  'atoms-input--all-variants',
+  'atoms-label--all-variants',
+  'atoms-radiogroup--all-variants',
+  'molecules-formfield--all-variants',
   'molecules-alert--all-variants',
   'atoms-badge--all-variants',
 ] as const;
@@ -49,6 +53,11 @@ const LANDING_STORIES = [
   'organisms-pricingtable--all-variants',
   'templates-marketinglayout--default',
   'templates-marketinglayout--not-found',
+] as const;
+const TABLE_STORIES = [
+  'organisms-datatable--all-variants',
+  'organisms-datatable--with-filters',
+  'organisms-datatable--empty',
 ] as const;
 const LOADING_STORIES = [
   'atoms-spinner--all-variants',
@@ -105,6 +114,7 @@ for (const width of AXE_WIDTHS) {
       ...LANDING_STORIES,
       ...CONTACT_STORIES,
       ...LOADING_STORIES,
+      ...TABLE_STORIES,
     ]) {
       test(`${id} in ${scheme} at ${String(width)}px renders with the brand fonts and no WCAG violations`, async ({
         page,
@@ -989,7 +999,13 @@ for (const width of [360, 1280]) {
 }
 
 // Storybook pads padded stories by 24 px, so drop it to test a true 360 px page.
-for (const id of ['organisms-pricingtable--default', 'organisms-pricingcard--all-variants']) {
+for (const id of [
+  'organisms-pricingtable--default',
+  'organisms-pricingcard--all-variants',
+  'molecules-formfield--all-variants',
+  'atoms-radiogroup--all-variants',
+  'organisms-datatable--with-filters',
+]) {
   test(`${id} at a true 360px, without the story padding, has no page horizontal scroll`, async ({
     page,
   }) => {
@@ -1028,4 +1044,340 @@ test('at a true 360px the pricing table keeps its row labels pinned while the pl
     expect(await region.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
   }).toPass({ timeout: 5_000 });
   expect(await labelOffset()).toBe(before);
+});
+
+const outlineOf = (locator: ReturnType<Page['locator']>) =>
+  locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { style: style.outlineStyle, width: style.outlineWidth };
+  });
+
+test('the input takes Tab, shows the focus outline and keeps the suffix out of the value', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'atoms-input--with-suffix', 'scheme:light');
+  const input = page.getByRole('textbox', { name: 'Endereço da loja' });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(input).toBeFocused();
+  // With an addon the outline sits on the group, around the suffix too.
+  expect(await outlineOf(page.locator('[data-slot="input-group"]'))).toEqual({
+    style: 'solid',
+    width: '2px',
+  });
+  await page.keyboard.type('docesdaana');
+
+  await expect(input).toHaveValue('docesdaana');
+  await expect(input).toHaveAccessibleDescription('.purpler.com.br');
+});
+
+test('a disabled input is skipped by Tab', async ({ page, browserName }) => {
+  await openStory(page, 'atoms-input--disabled', 'scheme:light');
+
+  await page.keyboard.press(tabKey(browserName));
+
+  await expect(page.getByRole('textbox', { name: 'Nome da loja' })).not.toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Nome da loja' })).toBeDisabled();
+});
+
+test('submitting the form with errors focuses the first field and links each message', async ({
+  page,
+  browserName,
+}, info) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'molecules-formfield--validation-flow', 'scheme:light');
+  const name = page.getByRole('textbox', { name: 'Nome da loja' });
+  const slug = page.getByRole('textbox', { name: 'Endereço da loja' });
+
+  await page.getByRole('button', { name: 'Criar loja' }).click();
+
+  await expect(name).toBeFocused();
+  await expect(name).toHaveAttribute('aria-invalid', 'true');
+  await expect(name).toHaveAccessibleDescription('Informe o nome da loja.');
+  await expect(slug).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('alert')).toHaveText([
+    'Informe o nome da loja.',
+    'Use ao menos 3 letras minúsculas, números ou hífen.',
+  ]);
+  expect(await outlineOf(name)).toEqual({ style: 'solid', width: '2px' });
+  await expectNoAxeViolations(page);
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/360/formfield-errors.png`,
+    fullPage: true,
+  });
+
+  await name.fill('Doces da Ana');
+  await page.keyboard.press(tabKey(browserName));
+  await expect(slug).toBeFocused();
+  await page.keyboard.type('docesdaana');
+  await page.keyboard.press('Enter');
+
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(name).not.toHaveAttribute('aria-invalid');
+  await expect(slug).toHaveAccessibleDescription(
+    '.purpler.com.br Só letras minúsculas, números e hífen. Dá para trocar depois.'
+  );
+});
+
+// Radix moves the focus in a timeout and checks only while the arrow is down, as a person presses it.
+async function holdArrowDown(page: Page): Promise<void> {
+  const before = await page.evaluate(() => document.activeElement?.id);
+  await page.keyboard.down('ArrowDown');
+  await expect.poll(() => page.evaluate(() => document.activeElement?.id)).not.toBe(before);
+  await page.keyboard.up('ArrowDown');
+}
+
+test('the plan cards take one Tab stop, move with the arrows and skip the disabled plan', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'atoms-radiogroup--card', 'scheme:light');
+  const basic = page.getByRole('radio', { name: 'Básico' });
+  const professional = page.getByRole('radio', { name: 'Profissional' });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(basic).toBeFocused();
+  expect(await outlineOf(page.locator('[data-slot="radio-group-field"]').first())).toEqual({
+    style: 'solid',
+    width: '2px',
+  });
+
+  await holdArrowDown(page);
+  await expect(professional).toBeChecked();
+  await holdArrowDown(page);
+  await expect(basic).toBeChecked();
+  await expect(page.getByRole('radio', { name: 'Enterprise' })).toHaveAccessibleDescription(
+    'Em breve R$ 149,99/mês · cursos em vídeo com marca d’água'
+  );
+});
+
+test('a click anywhere on a plan card selects it, but not on the disabled one', async ({
+  page,
+}) => {
+  await openStory(page, 'atoms-radiogroup--card', 'scheme:light');
+
+  const card = (name: string) => page.locator('[data-slot="radio-group-field"]', { hasText: name });
+  const professional = await card('Profissional').boundingBox();
+  if (!professional) throw new Error('card not rendered');
+  // Bottom-right corner: on the description, away from the circle and the label text.
+  await page.mouse.click(
+    professional.x + professional.width - 8,
+    professional.y + professional.height - 8
+  );
+  await expect(page.getByRole('radio', { name: 'Profissional' })).toBeChecked();
+
+  await card('Enterprise').click();
+  await expect(page.getByRole('radio', { name: 'Enterprise' })).not.toBeChecked();
+  await expect(page.getByRole('radio', { name: 'Profissional' })).toBeChecked();
+});
+
+const TOAST_BUTTONS = ['Neutro', 'Sucesso', 'Informação', 'Aviso', 'Erro', 'Com ação'] as const;
+
+for (const width of AXE_WIDTHS) {
+  for (const scheme of SCHEMES) {
+    test(`every toast type in ${scheme} at ${String(width)}px fits the screen with no WCAG violations`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width, height: 900 });
+      await openStory(page, 'molecules-toaster--all-variants', `scheme:${scheme}`);
+
+      for (const name of TOAST_BUTTONS) await page.getByRole('button', { name }).click();
+      // Sonner keeps the three newest on screen and hides the rest until one closes.
+      const toasts = page.locator('[data-sonner-toast][data-visible="true"]');
+      await expect(toasts).toHaveCount(3);
+      // axe samples colors, so wait for sonner's 400 ms enter and lift transitions to settle.
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            document.getAnimations().every((animation) => animation.playState !== 'running')
+          )
+        )
+        .toBe(true);
+      await expect(page.getByText('Produto arquivado')).toBeVisible();
+
+      for (const box of await toasts.evaluateAll((items) =>
+        items.map((item) => item.getBoundingClientRect().toJSON() as DOMRect)
+      )) {
+        expect(box.left).toBeGreaterThanOrEqual(0);
+        expect(box.right).toBeLessThanOrEqual(width);
+      }
+      await expectNoAxeViolations(page);
+      await page.screenshot({
+        path: `test-results/screens/${info.project.name}/${String(width)}/${scheme}/toaster.png`,
+      });
+    });
+  }
+}
+
+test('Alt+T moves the focus to the toasts, where Tab reaches the action', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'molecules-toaster--all-variants', 'scheme:light');
+  await page.getByRole('button', { name: 'Com ação' }).click();
+  await expect(page.getByText('Produto arquivado')).toBeVisible();
+
+  await page.keyboard.press('Alt+KeyT');
+  expect(await focusedInside(page, '[data-sonner-toaster]')).toBe(true);
+  const undo = page.getByRole('button', { name: 'Desfazer' });
+  for (
+    let step = 0;
+    step < 4 && !(await undo.evaluate((el) => el === document.activeElement));
+    step += 1
+  )
+    await page.keyboard.press(tabKey(browserName));
+  await expect(undo).toBeFocused();
+  expect(await outlineOf(undo)).toEqual({ style: 'solid', width: '2px' });
+  await page.keyboard.press('Enter');
+
+  await expect(page.getByText('Produto restaurado')).toBeVisible();
+});
+
+const TABLE_STORY =
+  '/iframe.html?id=organisms-datatable--with-filters&viewMode=story&globals=scheme:light';
+const query = (page: Page): Record<string, string> => {
+  const params = new URL(page.url()).searchParams;
+  return Object.fromEntries(
+    ['sort', 'order', 'page', 'status'].flatMap((key) => {
+      const value = params.get(key);
+      return value === null ? [] : [[key, value]];
+    })
+  );
+};
+const tableStatus = (page: Page) =>
+  page.getByRole('navigation', { name: 'Paginação: Produtos' }).getByRole('status');
+
+test('a shared table link opens sorted, filtered and paged; clicks and Back follow the URL', async ({
+  page,
+}) => {
+  await page.goto(`${TABLE_STORY}&sort=price&order=desc&page=2&status=active`);
+  const price = page.getByRole('columnheader', { name: 'Preço' });
+  const name = page.getByRole('columnheader', { name: 'Produto' });
+
+  await expect(price).toHaveAttribute('aria-sort', 'descending');
+  await expect(tableStatus(page)).toHaveText('Página 2 de 2');
+  await expect(page.getByRole('button', { name: 'Ativos' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  await expect(page.getByRole('cell', { name: 'Rascunho' })).toHaveCount(0);
+
+  await name.getByRole('button').click();
+  await expect(name).toHaveAttribute('aria-sort', 'ascending');
+  expect(query(page)).toEqual({ sort: 'name', order: 'asc', status: 'active' });
+
+  await page.getByRole('button', { name: 'Próxima página' }).click();
+  await expect(tableStatus(page)).toHaveText('Página 2 de 2');
+  expect(query(page)).toEqual({ sort: 'name', order: 'asc', status: 'active', page: '2' });
+
+  await page.goBack();
+  await expect(tableStatus(page)).toHaveText('Página 1 de 2');
+  await page.goBack();
+  await expect(price).toHaveAttribute('aria-sort', 'descending');
+  await expect(tableStatus(page)).toHaveText('Página 2 de 2');
+  await page.goForward();
+  await expect(name).toHaveAttribute('aria-sort', 'ascending');
+});
+
+test('a table link with invalid params falls back to the defaults without a new history entry', async ({
+  page,
+}) => {
+  await page.goto(`${TABLE_STORY}&sort=hack&order=up&page=-1&status=deleted`);
+
+  await expect(page.getByRole('columnheader', { name: 'Preço' })).toHaveAttribute(
+    'aria-sort',
+    'none'
+  );
+  await expect(tableStatus(page)).toHaveText('Página 1 de 3');
+  await expect.poll(() => query(page)).toEqual({});
+  expect(new URL(page.url()).searchParams.get('id')).toBe('organisms-datatable--with-filters');
+  expect(await page.evaluate(() => history.length)).toBe(2);
+});
+
+test('a percent-encoded table link opens sorted, and a reload keeps the state', async ({
+  page,
+}) => {
+  await page.goto(`${TABLE_STORY}&sort=na%6De&order=desc&status=act%69ve`);
+  const name = page.getByRole('columnheader', { name: 'Produto' });
+
+  await expect(name).toHaveAttribute('aria-sort', 'descending');
+  await expect(page.getByRole('button', { name: 'Ativos' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  await page.getByRole('button', { name: 'Rascunhos' }).click();
+  await expect.poll(() => query(page)).toEqual({ sort: 'name', order: 'desc', status: 'draft' });
+
+  await page.reload();
+
+  await expect(name).toHaveAttribute('aria-sort', 'descending');
+  await expect(page.getByRole('button', { name: 'Rascunhos' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  expect(query(page)).toEqual({ sort: 'name', order: 'desc', status: 'draft' });
+});
+
+test('the sort button takes Tab and Enter and shows the focus outline', async ({
+  page,
+  browserName,
+}) => {
+  await page.goto(TABLE_STORY);
+  const sortByName = page.getByRole('columnheader', { name: 'Produto' }).getByRole('button');
+  await expect(sortByName).toBeVisible();
+
+  await sortByName.focus();
+  await page.keyboard.press('Enter');
+
+  await expect(page.getByRole('columnheader', { name: 'Produto' })).toHaveAttribute(
+    'aria-sort',
+    'ascending'
+  );
+  await expect(sortByName).toBeFocused();
+  expect(await outlineOf(sortByName)).toEqual({ style: 'solid', width: '2px' });
+  await page.keyboard.press(tabKey(browserName));
+  await expect(page.getByRole('columnheader', { name: 'Preço' }).getByRole('button')).toBeFocused();
+});
+
+test('at 360px the table scrolls inside its focusable region, not the page', async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto(TABLE_STORY);
+  const region = page.getByRole('region', { name: 'Produtos' });
+  await expect(region).toBeVisible();
+
+  expect(await region.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+  ).toBeLessThanOrEqual(0);
+  await region.focus();
+  // WebKit sometimes drops the first arrow right after the focus moves; a person just presses again.
+  await expect(async () => {
+    await page.keyboard.press('ArrowRight');
+    expect(await region.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+  }).toPass({ timeout: 5_000 });
+  await page.screenshot({ path: `test-results/screens/${info.project.name}/360/datatable.png` });
+});
+
+test('an end-aligned column lines its header up with the numbers below it', async ({ page }) => {
+  await page.goto(TABLE_STORY);
+  const header = page.getByRole('columnheader', { name: 'Preço' }).getByRole('button');
+  await expect(header).toBeVisible();
+
+  const headerRight = await header.evaluate((el) => el.getBoundingClientRect().right);
+  const cellRights = await page
+    .locator('[data-slot="data-table"] tbody td:last-child')
+    .evaluateAll((cells) =>
+      cells.map((cell) => {
+        const range = document.createRange();
+        range.selectNodeContents(cell.lastChild ?? cell);
+        const rects = [...range.getClientRects()];
+        return Math.max(...rects.map((rect) => rect.right));
+      })
+    );
+
+  expect(cellRights.length).toBeGreaterThan(0);
+  for (const right of cellRights) expect(right).toBeCloseTo(headerRight, 0);
 });
