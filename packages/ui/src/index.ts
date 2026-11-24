@@ -1,3 +1,5 @@
+export { Badge, badgeVariants } from './atoms/Badge';
+export type { BadgeProps, BadgeVariants } from './atoms/Badge';
 export { Button, buttonVariants } from './atoms/Button';
 export type { ButtonProps, ButtonVariants } from './atoms/Button';
 export { Checkbox, checkboxFieldVariants, checkboxVariants } from './atoms/Checkbox';

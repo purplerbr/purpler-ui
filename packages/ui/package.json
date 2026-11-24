@@ -24,6 +24,10 @@
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
+    "./badge": {
+      "types": "./dist/atoms/Badge/index.d.ts",
+      "import": "./dist/atoms/Badge/index.js"
+    },
     "./button": {
       "types": "./dist/atoms/Button/index.d.ts",
       "import": "./dist/atoms/Button/index.js"
