@@ -36,6 +36,10 @@
       "types": "./dist/atoms/Heading/index.d.ts",
       "import": "./dist/atoms/Heading/index.js"
     },
+    "./logo": {
+      "types": "./dist/atoms/Logo/index.d.ts",
+      "import": "./dist/atoms/Logo/index.js"
+    },
     "./skeleton": {
       "types": "./dist/atoms/Skeleton/index.d.ts",
       "import": "./dist/atoms/Skeleton/index.js"
