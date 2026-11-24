@@ -41,7 +41,7 @@ describe('tokens.css', () => {
 
   it('declares radius, fonts, elevation and motion once, in :root', () => {
     expect(light).toContain('  --radius: 0.875rem;');
-    expect(light).toContain('  --button-radius: 9999px;');
+    expect(light).toContain('  --button-radius: 1.5rem;');
     expect(light).toContain("  --font-body: 'Figtree', ");
     expect(light).toContain("  --font-heading: 'Bricolage Grotesque', ");
     expect(light).toContain('  --elevation-md: ');
