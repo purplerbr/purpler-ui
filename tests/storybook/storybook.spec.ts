@@ -1533,3 +1533,36 @@ test('the store and account slots, rendered in the bar and in the menu, reach as
   await expect(page.getByRole('dialog', { name: 'Menu' })).toBeVisible();
   await once(1);
 });
+
+test('the open dashboard menu closes when the window grows to the sidebar width, focusing the logo', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--default', 'scheme:light');
+
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await expect(page.getByRole('dialog', { name: 'Menu' })).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 800 });
+
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(page.getByRole('link', { name: 'Purpler, início' })).toBeFocused();
+  await expect(
+    page.getByRole('banner').getByRole('navigation', { name: 'Principal' })
+  ).toBeVisible();
+});
+
+test('a modifier click on a dashboard menu link keeps the menu open and the focus inside', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--default', 'scheme:light');
+
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  const menu = page.getByRole('dialog', { name: 'Menu' });
+  await menu.getByRole('link', { name: 'Pedidos' }).click({ modifiers: ['ControlOrMeta'] });
+
+  await expect(menu).toBeVisible();
+  expect(await focusedInside(page, '[role="dialog"]')).toBe(true);
+  expect(page.url()).not.toMatch(/#pedidos$/);
+  for (const other of page.context().pages()) if (other !== page) await other.close();
+});

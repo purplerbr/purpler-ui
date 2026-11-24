@@ -1,5 +1,6 @@
 import { Menu, type LucideIcon } from 'lucide-react';
 import {
+  useEffect,
   useId,
   useRef,
   useState,
@@ -31,6 +32,8 @@ export interface DashboardNavItem {
   icon: LucideIcon;
   /** Marks the page being shown with `aria-current="page"`; a router `NavLink` can do it instead. */
   current?: boolean;
+  /** Current only on this exact path (the `end` of a router NavLink); set it on the store home item. */
+  end?: boolean;
 }
 
 export interface DashboardNavGroup {
@@ -40,7 +43,11 @@ export interface DashboardNavGroup {
 }
 
 export interface DashboardLinkProps {
+  /** `home` is the logo, which is never the current page; `nav` is a menu item. */
+  kind: 'home' | 'nav';
   href: string;
+  /** Pass it as the `end` of the router `NavLink`. */
+  end: boolean;
   className: string;
   'aria-current'?: 'page' | undefined;
   children: ReactNode;
@@ -69,11 +76,14 @@ export type DashboardLayoutProps = ComponentProps<'div'> & {
   contentId?: string;
 };
 
-const renderAnchor = ({ href, children, ...props }: DashboardLinkProps) => (
-  <a href={href} {...props}>
+const renderAnchor = ({ href, className, children, ...props }: DashboardLinkProps) => (
+  <a href={href} className={className} aria-current={props['aria-current']}>
     {children}
   </a>
 );
+
+// The Tailwind `lg` breakpoint; past it the sidebar shows, so an open menu sheet must go.
+const LG_QUERY = '(min-width: 64rem)';
 
 function StoreArea({
   store,
@@ -112,10 +122,12 @@ function NavGroup({
   const labelId = useId();
   const list = (
     <ul className="grid gap-1">
-      {group.items.map(({ href, label, icon: Icon, current }) => (
+      {group.items.map(({ href, label, icon: Icon, current, end = false }) => (
         <li key={href}>
           {renderLink({
+            kind: 'nav',
             href,
+            end,
             className: dashboardNavLinkVariants(),
             'aria-current': current ? 'page' : undefined,
             children: (
@@ -201,7 +213,23 @@ export function DashboardLayout({
   ...props
 }: DashboardLayoutProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const navigated = useRef(false);
+  const closedBy = useRef<'link' | 'resize' | null>(null);
+  const homeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // jsdom and old browsers have no matchMedia; the menu then just stays open.
+    if (typeof window.matchMedia !== 'function') return undefined;
+    const query = window.matchMedia(LG_QUERY);
+    const close = () => {
+      if (!query.matches) return;
+      closedBy.current = 'resize';
+      setMenuOpen(false);
+    };
+    query.addEventListener('change', close);
+    return () => {
+      query.removeEventListener('change', close);
+    };
+  }, []);
   const body = { nav, navLabel, store, storeLoading, storeLoadingLabel, account, renderLink };
 
   return (
@@ -214,11 +242,11 @@ export function DashboardLayout({
         {skipLinkLabel}
       </a>
       <header data-slot="dashboard-layout-sidebar" className={dashboardSidebarVariants()}>
-        <div className="flex items-center gap-2 px-2 py-2 lg:px-6 lg:pt-6 lg:pb-4">
+        <div ref={homeRef} className="flex items-center gap-2 px-2 py-2 lg:px-6 lg:pt-6 lg:pb-4">
           <Sheet
             open={menuOpen}
             onOpenChange={(open) => {
-              if (open) navigated.current = false;
+              if (open) closedBy.current = null;
               setMenuOpen(open);
             }}
           >
@@ -237,15 +265,21 @@ export function DashboardLayout({
               aria-describedby={undefined}
               closeLabel={closeMenuLabel}
               className="bg-sidebar text-sidebar-foreground"
-              // Any link closes the menu; the app moves the focus to the new page's h1 (§7.2).
+              // A plain click on a link closes the menu; the app moves the focus to the new h1 (§7.2).
               onClick={(event) => {
+                const newTab = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+                if (newTab || event.button !== 0) return;
                 if (event.target instanceof Element && event.target.closest('a[href]')) {
-                  navigated.current = true;
+                  closedBy.current = 'link';
                   setMenuOpen(false);
                 }
               }}
+              // From `lg` the menu button is hidden, so the focus goes to the logo next to it.
               onCloseAutoFocus={(event) => {
-                if (navigated.current) event.preventDefault();
+                if (!closedBy.current) return;
+                event.preventDefault();
+                if (closedBy.current === 'resize')
+                  homeRef.current?.querySelector<HTMLElement>('a[href]')?.focus();
               }}
             >
               <SheetHeader>
@@ -257,7 +291,9 @@ export function DashboardLayout({
             </SheetContent>
           </Sheet>
           {renderLink({
+            kind: 'home',
             href: homeHref,
+            end: false,
             className:
               'inline-flex min-h-11 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sidebar-ring',
             children: <Logo size="sm" aria-label={homeLabel} />,

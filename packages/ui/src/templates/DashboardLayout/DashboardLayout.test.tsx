@@ -1,7 +1,7 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { House, Package, Settings } from 'lucide-react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import {
   DashboardLayout,
@@ -40,6 +40,43 @@ function Shell(props: Partial<DashboardLayoutProps>) {
     </DashboardLayout>
   );
 }
+
+// Mimics React Router's NavLink: current by path prefix unless `end`; the logo is a plain Link.
+function navLinkAt(path: string) {
+  return function RouterLink({ kind, href, end, className, children }: DashboardLinkProps) {
+    const active = kind === 'nav' && (path === href || (!end && path.startsWith(`${href}/`)));
+    return (
+      <a href={href} className={className} aria-current={active ? 'page' : undefined}>
+        {children}
+      </a>
+    );
+  };
+}
+
+function stubMatchMedia() {
+  const listeners = new Set<() => void>();
+  const query = {
+    matches: false,
+    addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+    removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener),
+  };
+  vi.stubGlobal('matchMedia', () => query);
+  return {
+    listeners,
+    resize: (matches: boolean) => {
+      query.matches = matches;
+      act(() => {
+        listeners.forEach((listener) => {
+          listener();
+        });
+      });
+    },
+  };
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 const openMenu = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.click(screen.getByRole('button', { name: 'Abrir menu' }));
@@ -103,11 +140,13 @@ describe('DashboardLayout', () => {
     expect(screen.getByRole('link', { name: 'Purpler, início' })).toHaveAttribute(
       'data-router-link'
     );
-    expect(renderLink.mock.calls.map(([link]) => [link.href, link['aria-current']])).toEqual([
-      ['/loja/doceria/inicio', undefined],
-      ['/loja/doceria/inicio', 'page'],
-      ['/loja/doceria/produtos', undefined],
-      ['/loja/doceria/configuracoes', undefined],
+    expect(
+      renderLink.mock.calls.map(([link]) => [link.kind, link.href, link.end, link['aria-current']])
+    ).toEqual([
+      ['home', '/loja/doceria/inicio', false, undefined],
+      ['nav', '/loja/doceria/inicio', false, 'page'],
+      ['nav', '/loja/doceria/produtos', false, undefined],
+      ['nav', '/loja/doceria/configuracoes', false, undefined],
     ]);
   });
 
@@ -172,6 +211,72 @@ describe('DashboardLayout', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Abrir menu' })).not.toHaveFocus();
+  });
+
+  it.each([
+    ['/loja/doceria', 'Início'],
+    ['/loja/doceria/pedidos', 'Pedidos'],
+    ['/loja/doceria/pedidos/42', 'Pedidos'],
+  ])('with a prefix-matching router link at %s, only %s is the current page', (path, name) => {
+    render(
+      <DashboardLayout
+        homeHref="/loja/doceria"
+        nav={[
+          { items: [{ href: '/loja/doceria', label: 'Início', icon: House, end: true }] },
+          { items: [{ href: '/loja/doceria/pedidos', label: 'Pedidos', icon: Package }] },
+        ]}
+        renderLink={navLinkAt(path)}
+      >
+        <h1>Página</h1>
+      </DashboardLayout>
+    );
+
+    expect(screen.getAllByRole('link', { current: 'page' })).toEqual([
+      screen.getByRole('link', { name }),
+    ]);
+    expect(screen.getByRole('link', { name: 'Purpler, início' })).not.toHaveAttribute(
+      'aria-current'
+    );
+  });
+
+  it('keeps the menu open when a link is opened in a new tab', async () => {
+    const user = userEvent.setup();
+    render(<Shell />);
+    const menu = await openMenu(user);
+    await user.keyboard('{Control>}');
+    await user.click(within(menu).getByRole('link', { name: 'Produtos' }));
+    await user.keyboard('{/Control}');
+    expect(screen.getByRole('dialog', { name: 'Menu' })).toBeInTheDocument();
+    expect(menu.contains(document.activeElement)).toBe(true);
+  });
+
+  it('keeps the menu open on a click with a button other than the main one', async () => {
+    const user = userEvent.setup();
+    render(<Shell />);
+    const menu = await openMenu(user);
+
+    fireEvent.click(within(menu).getByRole('link', { name: 'Produtos' }), { button: 1 });
+
+    expect(screen.getByRole('dialog', { name: 'Menu' })).toBeInTheDocument();
+  });
+
+  it('closes the menu when the window reaches lg and moves the focus to the logo', async () => {
+    const media = stubMatchMedia();
+    const user = userEvent.setup();
+    const { unmount } = render(<Shell />);
+
+    await openMenu(user);
+    media.resize(false);
+    expect(screen.getByRole('dialog', { name: 'Menu' })).toBeInTheDocument();
+    media.resize(true);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // Radix restores the focus on the next tick.
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Purpler, início' })).toHaveFocus();
+    });
+    unmount();
+    expect(media.listeners.size).toBe(0);
   });
 
   it('keeps the menu open when something other than a link is clicked', async () => {

@@ -107,7 +107,8 @@ const meta = {
     account: { control: false, description: 'Rodapé da barra: conta e o botão “Sair”' },
     renderLink: {
       control: false,
-      description: 'Renderiza cada link; o app passa o `NavLink` do roteador',
+      description:
+        'Renderiza cada link. `kind` é `home` no logo (use `Link`, que nunca fica ativo) e `nav` nos itens (use `NavLink` com o `end` recebido)',
     },
     children: { control: false, description: 'Conteúdo da página, com o `h1`' },
     contentId: { control: 'text', description: '`id` do `main`, destino do link de pular' },
@@ -117,7 +118,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Casco do painel do lojista, sempre com a marca Purpler. A partir de `lg`, a barra lateral fica fixa com o logo, a loja atual, a navegação e a conta. Abaixo disso, um botão abre o mesmo conteúdo num `Sheet` (foco preso, `Esc` fecha e o foco volta ao botão; seguir um link fecha o menu). O primeiro Tab mostra “Pular para o conteúdo”. A lib não conhece lojas nem rotas: o app passa a área da loja, a navegação e um `renderLink` com o `NavLink` do roteador, que marca a página atual com `aria-current="page"`.',
+          'Casco do painel do lojista, sempre com a marca Purpler. A partir de `lg`, a barra lateral fica fixa com o logo, a loja atual, a navegação e a conta. Abaixo disso, um botão abre o mesmo conteúdo num `Sheet` (foco preso, `Esc` fecha e o foco volta ao botão; seguir um link fecha o menu). O primeiro Tab mostra “Pular para o conteúdo”. A lib não conhece lojas nem rotas: o app passa a área da loja, a navegação e um `renderLink` com o `NavLink` do roteador, que marca a página atual com `aria-current="page"`. O logo chega com `kind` igual a `home` e deve usar `Link`; o item da página inicial da loja leva `end: true`, para não ficar ativo em todas as rotas. Se a janela chega a `lg` com o menu aberto, ele fecha e o foco vai para o logo.',
       },
     },
   },
