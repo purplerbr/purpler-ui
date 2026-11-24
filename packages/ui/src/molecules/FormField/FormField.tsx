@@ -17,7 +17,7 @@ export type FormFieldProps = Omit<ComponentProps<'div'>, 'id' | 'children'> & {
   /** Id of the control; generated when missing. */
   id?: string | undefined;
   /** One control (`Input`, `RadioGroup`…); it receives the id and the ARIA links. */
-  children: ReactElement;
+  children: ReactElement<{ id?: string | undefined }>;
 };
 
 export function FormField({
@@ -30,7 +30,8 @@ export function FormField({
   ...props
 }: FormFieldProps) {
   const generatedId = useId();
-  const controlId = id ?? generatedId;
+  // Slot lets the child's id win, so the label must point at that id too.
+  const controlId = children.props.id ?? id ?? generatedId;
   const labelId = `${controlId}-label`;
   const descriptionId = description === undefined ? undefined : `${controlId}-description`;
   const errorId = error ? `${controlId}-error` : undefined;
@@ -46,7 +47,8 @@ export function FormField({
       <Label id={labelId} htmlFor={controlId}>
         {label}
       </Label>
-      {/* aria-labelledby also names a RadioGroup, which a <label for> cannot. */}
+      {/* aria-labelledby also names a RadioGroup, which a <label for> cannot; Slot puts the
+          child's own aria-describedby first and adds the help text and error after it. */}
       <Slot.Root
         id={controlId}
         aria-labelledby={labelId}

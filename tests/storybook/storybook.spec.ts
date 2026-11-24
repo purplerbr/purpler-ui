@@ -1360,3 +1360,24 @@ test('at 360px the table scrolls inside its focusable region, not the page', asy
   }).toPass({ timeout: 5_000 });
   await page.screenshot({ path: `test-results/screens/${info.project.name}/360/datatable.png` });
 });
+
+test('an end-aligned column lines its header up with the numbers below it', async ({ page }) => {
+  await page.goto(TABLE_STORY);
+  const header = page.getByRole('columnheader', { name: 'Preço' }).getByRole('button');
+  await expect(header).toBeVisible();
+
+  const headerRight = await header.evaluate((el) => el.getBoundingClientRect().right);
+  const cellRights = await page
+    .locator('[data-slot="data-table"] tbody td:last-child')
+    .evaluateAll((cells) =>
+      cells.map((cell) => {
+        const range = document.createRange();
+        range.selectNodeContents(cell.lastChild ?? cell);
+        const rects = [...range.getClientRects()];
+        return Math.max(...rects.map((rect) => rect.right));
+      })
+    );
+
+  expect(cellRights.length).toBeGreaterThan(0);
+  for (const right of cellRights) expect(right).toBeCloseTo(headerRight, 0);
+});

@@ -154,6 +154,41 @@ describe('FormField', () => {
     );
   });
 
+  it('uses the id the control already has, so the label still names it', async () => {
+    const user = userEvent.setup();
+    render(
+      <FormField label="Nome da loja" description="Aparece no topo da loja.">
+        <Input id="store-name" />
+      </FormField>
+    );
+    const input = screen.getByRole('textbox', { name: 'Nome da loja' });
+
+    await user.click(screen.getByText('Nome da loja'));
+
+    expect(input).toHaveAttribute('id', 'store-name');
+    expect(input).toHaveFocus();
+    expect(input).toHaveAccessibleDescription('Aparece no topo da loja.');
+  });
+
+  it('keeps the control own description first, then the help text and the error', () => {
+    render(
+      <>
+        <p id="hint">Você pode trocar depois.</p>
+        <FormField
+          label="Nome da loja"
+          description="Aparece no topo da loja."
+          error="Informe o nome."
+        >
+          <Input aria-describedby="hint" />
+        </FormField>
+      </>
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Nome da loja' })).toHaveAccessibleDescription(
+      'Você pode trocar depois. Aparece no topo da loja. Informe o nome.'
+    );
+  });
+
   it('names a radio group, which a label element cannot do', () => {
     render(
       <FormField label="Plano" error="Escolha um plano.">

@@ -11,7 +11,7 @@ export const dataTableRegionVariants = cva([
 export const dataTableCellVariants = cva('px-4 py-3 align-middle whitespace-nowrap', {
   variants: {
     kind: {
-      head: 'bg-muted text-start font-semibold text-muted-foreground',
+      head: 'bg-muted font-semibold text-muted-foreground',
       cell: 'border-t border-border',
     },
     align: { start: 'text-start', end: 'text-end' },
