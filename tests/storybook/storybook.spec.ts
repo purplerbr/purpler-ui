@@ -26,6 +26,8 @@ const FORM_STORIES = [
 ] as const;
 const CONTENT_STORIES = [
   'atoms-heading--all-variants',
+  'atoms-list--all-variants',
+  'atoms-list--inside-empty-state',
   'atoms-logo--all-variants',
   'molecules-accordion--all-variants',
   'molecules-card--all-variants',
@@ -520,6 +522,7 @@ for (const width of [360, 768, 1280]) {
       'atoms-logo--all-variants',
       'atoms-badge--all-variants',
       'molecules-accordion--all-variants',
+      'atoms-list--inside-empty-state',
       ...LANDING_STORIES,
       ...LOADING_STORIES,
       ...BUTTON_STORIES,
@@ -741,6 +744,29 @@ test('every pricing card CTA is named by its text and described by its plan', as
   ).toHaveAccessibleDescription('Profissional');
   await expect(page.getByText('Mais popular')).toBeVisible();
 });
+
+for (const width of AXE_WIDTHS) {
+  test(`at ${String(width)}px a list inside the centered EmptyState starts its items at one edge`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await openStory(page, 'atoms-list--inside-empty-state', 'scheme:light');
+    const list = page.getByRole('list');
+    const lefts = await list
+      .getByRole('listitem')
+      .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().left)));
+
+    await expect(list.getByRole('listitem')).toHaveCount(3);
+    expect(new Set(lefts).size).toBe(1);
+    expect(await list.evaluate((element) => getComputedStyle(element).textAlign)).toBe('start');
+    expect(
+      await page.getByRole('heading').evaluate((element) => getComputedStyle(element).textAlign)
+    ).toBe('center');
+    await page.screenshot({
+      path: `test-results/screens/${info.project.name}/${String(width)}/list-in-empty-state.png`,
+    });
+  });
+}
 
 // Storybook pads padded stories by 24 px, so drop it to test a true 360 px page.
 for (const id of ['organisms-pricingtable--default', 'organisms-pricingcard--all-variants']) {

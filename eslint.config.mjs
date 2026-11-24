@@ -50,6 +50,8 @@ export default defineConfig(
     rules: {
       // A scrollable region must take focus to be scrolled by keyboard (WCAG 2.1.1, axe scrollable-region-focusable).
       'jsx-a11y/no-noninteractive-tabindex': ['error', { tags: [], roles: ['tabpanel', 'region'] }],
+      // Safari + VoiceOver drop list semantics under `list-style: none`, so `List` sets role="list".
+      'jsx-a11y/no-redundant-roles': ['error', { nav: ['navigation'], ul: ['list'] }],
     },
   },
   {
