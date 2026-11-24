@@ -741,3 +741,45 @@ test('every pricing card CTA is named by its text and described by its plan', as
   ).toHaveAccessibleDescription('Profissional');
   await expect(page.getByText('Mais popular')).toBeVisible();
 });
+
+// Storybook pads padded stories by 24 px, so drop it to test a true 360 px page.
+for (const id of ['organisms-pricingtable--default', 'organisms-pricingcard--all-variants']) {
+  test(`${id} at a true 360px, without the story padding, has no page horizontal scroll`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await openStory(page, id, 'scheme:light');
+    await page.addStyleTag({ content: 'body { padding: 0 !important; margin: 0 !important; }' });
+
+    expect(await page.evaluate(() => document.body.getBoundingClientRect().width)).toBe(360);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+    ).toBeLessThanOrEqual(0);
+  });
+}
+
+test('at a true 360px the pricing table keeps its row labels pinned while the plans scroll', async ({
+  page,
+  browserName,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'organisms-pricingtable--default', 'scheme:light');
+  await page.addStyleTag({ content: 'body { padding: 0 !important; margin: 0 !important; }' });
+  const region = page.getByRole('region', { name: 'Comparação dos planos da Purpler' });
+  const labelOffset = () =>
+    region.evaluate((element) => {
+      const label = element.querySelector('tbody th');
+      return Math.round(
+        (label?.getBoundingClientRect().left ?? -1) - element.getBoundingClientRect().left
+      );
+    });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(region).toBeFocused();
+  const before = await labelOffset();
+  await expect(async () => {
+    await page.keyboard.press('ArrowRight');
+    expect(await region.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  }).toPass({ timeout: 5_000 });
+  expect(await labelOffset()).toBe(before);
+});
