@@ -15,6 +15,9 @@ const BUTTON_STORIES = [
   'atoms-button--all-variants',
   'atoms-button--default',
   'atoms-button--loading',
+  'atoms-button--long-label',
+  'atoms-button--long-word',
+  'atoms-button--link-in-text',
 ] as const;
 const FORM_STORIES = ['atoms-checkbox--all-variants', 'molecules-alert--all-variants'] as const;
 const CONTENT_STORIES = [
@@ -162,6 +165,139 @@ test('the button is reachable with Tab and shows a 2px focus outline in the ring
   expect(outline).toEqual({ style: 'solid', width: '2px' });
 });
 
+test('single-line buttons keep their fixed height in every size, with or without a border', async ({
+  page,
+}) => {
+  await openStory(page, 'atoms-button--all-variants', 'scheme:light');
+
+  const heightsOf = (name: string | RegExp) =>
+    page
+      .getByRole('button', { name, exact: true })
+      .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
+  for (const name of [
+    'Publicar loja',
+    'Ver detalhes',
+    'Editar produto',
+    'Cancelar',
+    'Excluir produto',
+    'Ver todos os pedidos',
+  ]) {
+    expect(await heightsOf(name), name).toEqual([32, 40, 48]);
+  }
+  for (const name of ['Indisponível', 'Salvando', /^Adicionar \(/]) {
+    expect(await heightsOf(name), String(name)).toEqual(Array.from({ length: 6 }, () => 40));
+  }
+});
+
+const LONG_LABELS = [
+  ['long-label', /Doceria e Confeitaria/],
+  ['long-word', /MinhaLojaDeRoupas/],
+] as const;
+
+for (const [story, name] of LONG_LABELS) {
+  test(`${story} wraps inside the button and the viewport at 360px`, async ({ page }, info) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await openStory(page, `atoms-button--${story}`, 'scheme:light');
+
+    const box = await page.getByRole('button', { name }).evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        overflow: element.scrollWidth - element.clientWidth,
+        left: rect.left,
+        right: rect.right,
+        height: rect.height,
+      };
+    });
+    expect(box.overflow).toBeLessThanOrEqual(0);
+    expect(box.left).toBeGreaterThanOrEqual(0);
+    expect(box.right).toBeLessThanOrEqual(360);
+    expect(box.height).toBeGreaterThan(40);
+    await page.screenshot({
+      path: `test-results/screens/${info.project.name}/360/button-${story}.png`,
+    });
+  });
+}
+
+async function wrappedButtonBox(page: Page, name: RegExp) {
+  return page.getByRole('button', { name }).evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const label = range.getBoundingClientRect();
+    const spinner = element.querySelector('svg')?.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      lines: new Set([...range.getClientRects()].map(({ top }) => Math.round(top))).size,
+      overflow: element.scrollWidth - element.clientWidth,
+      inside: label.left >= rect.left && label.right <= rect.right && label.bottom <= rect.bottom,
+      spinnerInside: spinner ? spinner.left >= rect.left && spinner.right <= rect.right : null,
+      ring: { style: style.outlineStyle, width: style.outlineWidth, offset: style.outlineOffset },
+      ringLeft: rect.left - 4,
+      ringRight: rect.right + 4,
+    };
+  });
+}
+
+test('a wrapped two-line button shows the focus ring around the whole button', async ({
+  page,
+  browserName,
+}, info) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'atoms-button--long-label', 'scheme:light');
+
+  await page.keyboard.press(tabKey(browserName));
+
+  await expect(page.getByRole('button', { name: /Doceria/ })).toBeFocused();
+  const box = await wrappedButtonBox(page, /Doceria/);
+  expect(box.lines).toBe(2);
+  expect(box.ring).toEqual({ style: 'solid', width: '2px', offset: '2px' });
+  expect(box.ringLeft).toBeGreaterThanOrEqual(0);
+  expect(box.ringRight).toBeLessThanOrEqual(360);
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/360/button-long-label-focus.png`,
+  });
+});
+
+test('a long label still wraps inside the button while loading, next to the spinner', async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'atoms-button--long-label&args=loading:!true', 'scheme:light');
+  const button = page.getByRole('button', { name: /Doceria/ });
+
+  await expect(button).toHaveAttribute('aria-busy', 'true');
+  const box = await wrappedButtonBox(page, /Doceria/);
+  expect(box.lines).toBeGreaterThanOrEqual(2);
+  expect(box.overflow).toBeLessThanOrEqual(0);
+  expect(box.inside).toBe(true);
+  expect(box.spinnerInside).toBe(true);
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/360/button-long-label-loading.png`,
+  });
+});
+
+test('a link-variant button lines up with the text next to it', async ({ page }, info) => {
+  await openStory(page, 'atoms-button--link-in-text', 'scheme:light');
+  const text = page.getByText('Você ainda não recebeu pedidos hoje.');
+  const link = page.getByRole('button', { name: 'Ver todos os pedidos' });
+
+  const [textLeft, linkLeft, labelLeft] = await Promise.all([
+    text.evaluate((element) => element.getBoundingClientRect().left),
+    link.evaluate((element) => element.getBoundingClientRect().left),
+    link.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return range.getBoundingClientRect().left;
+    }),
+  ]);
+  expect(linkLeft).toBe(textLeft);
+  // WebKit puts the glyph box a few thousandths of a pixel in.
+  expect(labelLeft).toBeCloseTo(textLeft, 1);
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/button-link-in-text.png`,
+  });
+});
+
 test('the checkbox is reachable with Tab, toggles with Space and shows the focus outline', async ({
   page,
   browserName,
@@ -249,7 +385,12 @@ for (const width of [360, 768, 1280]) {
     page,
   }, info) => {
     await page.setViewportSize({ width, height: 900 });
-    for (const id of [...FOUNDATIONS, 'templates-authlayout--default', ...LOADING_STORIES]) {
+    for (const id of [
+      ...FOUNDATIONS,
+      'templates-authlayout--default',
+      ...LOADING_STORIES,
+      ...BUTTON_STORIES,
+    ]) {
       await openStory(page, id, 'scheme:light');
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - window.innerWidth

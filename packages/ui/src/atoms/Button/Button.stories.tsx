@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ArrowRight, Plus, Trash } from 'lucide-react';
 import { fn } from 'storybook/test';
+import { Text } from '../Text/Text';
 import { Button } from './Button';
 
 const VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;
@@ -92,6 +93,34 @@ export const AsLink: Story = {
     <Button {...args} asChild>
       <a href="#pedidos">Ver meus pedidos</a>
     </Button>
+  ),
+};
+
+export const LongLabel: Story = {
+  args: {
+    variant: 'outline',
+    children: 'Doceria e Confeitaria Artesanal da Vó Maria — Unidade Centro',
+  },
+  parameters: {
+    viewport: {
+      options: { phone360: { name: '360 px', styles: { width: '360px', height: '800px' } } },
+    },
+  },
+  globals: { viewport: { value: 'phone360', isRotated: false } },
+};
+
+export const LongWord: Story = {
+  ...LongLabel,
+  args: { ...LongLabel.args, children: 'MinhaLojaDeRoupasFemininasEAcessoriosDaVilaMariana' },
+};
+
+export const LinkInText: Story = {
+  args: { variant: 'link', size: 'sm', children: VARIANT_LABELS.link },
+  render: (args) => (
+    <div className="flex flex-col items-start gap-1">
+      <Text>Você ainda não recebeu pedidos hoje.</Text>
+      <Button {...args} />
+    </div>
   ),
 };
 

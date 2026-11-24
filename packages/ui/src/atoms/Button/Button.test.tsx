@@ -161,6 +161,73 @@ describe('Button', () => {
     expect(screen.getByRole('button', { name: 'Adicionar produto' })).toBeInTheDocument();
   });
 
+  it('keeps a long label whole as the accessible name, in every size and as a link', async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+    const label = 'Doceria e Confeitaria Artesanal da Vó Maria — Unidade Centro';
+    render(
+      <>
+        <Button size="sm" onClick={onClick}>
+          {label}
+        </Button>
+        <Button size="lg" onClick={onClick}>
+          {label}
+        </Button>
+        <Button variant="link" onClick={onClick}>
+          {label}
+        </Button>
+      </>
+    );
+    const buttons = screen.getAllByRole('button', { name: label });
+
+    for (const button of buttons) await user.click(button);
+
+    expect(buttons).toHaveLength(3);
+    expect(onClick).toHaveBeenCalledTimes(3);
+  });
+
+  it('gives an asChild link the same classes as the button in every variant and size', () => {
+    for (const variant of VARIANTS) {
+      for (const size of ['sm', 'md', 'lg', 'icon'] as const) {
+        const { unmount } = render(
+          <>
+            <Button variant={variant} size={size}>
+              Ver pedidos
+            </Button>
+            <Button asChild variant={variant} size={size}>
+              <a href="/pedidos">Ver pedidos</a>
+            </Button>
+          </>
+        );
+        const button = screen.getByRole('button', { name: 'Ver pedidos' });
+        const link = screen.getByRole('link', { name: 'Ver pedidos' });
+
+        expect(link.className, `${variant} ${size}`).toBe(button.className);
+        unmount();
+      }
+    }
+  });
+
+  it('drops the side padding on the link variant and keeps it on the others', () => {
+    render(
+      <>
+        <Button variant="link" size="lg">
+          Ver todos os pedidos
+        </Button>
+        <Button variant="outline" size="lg">
+          Editar produto
+        </Button>
+      </>
+    );
+    const link = screen.getByRole('button', { name: 'Ver todos os pedidos' });
+    const outline = screen.getByRole('button', { name: 'Editar produto' });
+
+    expect(link.classList.contains('px-0')).toBe(true);
+    expect(link.classList.contains('px-6')).toBe(false);
+    expect(outline.classList.contains('px-6')).toBe(true);
+    expect(outline.classList.contains('px-0')).toBe(false);
+  });
+
   it('has no accessibility violations in any variant or state', async () => {
     const { container } = render(
       <div>
