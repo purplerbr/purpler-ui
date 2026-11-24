@@ -1,5 +1,20 @@
 # @purplerbr/ui
 
+## 0.3.0
+
+### Minor Changes
+
+- 6caf0a5: New `Accordion` molecule (`@purplerbr/ui/accordion`) for FAQs, built on native `<details>` and `<summary>`: it opens and closes without JavaScript, so prerendered pages stay readable and every answer stays in the HTML for search engines. `open` starts an item expanded and a shared `name` keeps one item open at a time.
+- a236bc6: New `Badge` atom (`@purplerbr/ui/badge`): a short static label such as "Mais popular" or "Rascunho", in the primary, secondary, accent, outline, success, warning, info and destructive variants. Every fill and text pair is a semantic pair proven AA, store themes included.
+- bc0f364: New `EmptyState` molecule (`@purplerbr/ui/empty-state`): a decorative icon, a title (level 1 for a whole page such as a 404), a description and the next action.
+- bd8a47e: New `Logo` atom (`@purplerbr/ui/logo`): the Purpler logo filled with the `brand-mark` and `brand-wordmark` tokens, in three sizes. `AuthLayout` now renders it instead of its inlined copy.
+- bc0f364: New `MarketingFooter` organism (`@purplerbr/ui/marketing-footer`): logo, legal links, a `mailto:` contact and a closing note, all from props.
+- bc0f364: New `MarketingHeader` organism (`@purplerbr/ui/marketing-header`) for the Purpler site: skip link to `#conteudo`, logo, nav links with `aria-current`, a CTA and a mobile menu in a `Sheet`. Without JavaScript the menu button hides and the links show under the bar, so prerendered pages stay navigable. Links, CTA and labels come from props.
+- bc0f364: New `MarketingLayout` template (`@purplerbr/ui/marketing-layout`): header, a focusable `main` with the skip link target `id` (`conteudo` by default) and footer, for every public page of the site that is not a login page.
+- bc0f364: New `PricingCard` organism (`@purplerbr/ui/pricing-card`): one plan with its name, a price already formatted by the app, its features and a CTA described by the plan name; `highlight` adds a `Badge` and a highlighted border. The lib never computes prices.
+- bc0f364: New `PricingTable` organism (`@purplerbr/ui/pricing-table`): the plan comparison as a real table with column and row headers, text values as given and booleans read as "Incluído" or "Não incluído", in a scroll region that takes keyboard focus on small screens.
+- bc0f364: New `Sheet` molecule (`@purplerbr/ui/sheet`): a side panel on the Radix Dialog that traps the focus, closes on Esc and returns the focus to its trigger, from the right, left, top or bottom edge.
+
 ## 0.2.2
 
 ### Patch Changes
