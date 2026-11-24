@@ -768,6 +768,27 @@ for (const width of AXE_WIDTHS) {
   });
 }
 
+test('a list without markers keeps its list and listitem roles in the accessibility tree', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'atoms-list--without-marker', 'scheme:light');
+  const list = page.locator('[data-slot="list"]');
+  expect(await list.evaluate((element) => getComputedStyle(element).listStyleType)).toBe('none');
+  // WebKit hides its tree from tests and drops the implicit role here, so only the attribute counts.
+  await expect(list).toHaveAttribute('role', 'list');
+  if (browserName !== 'chromium') return;
+
+  const cdp = await page.context().newCDPSession(page);
+  const { nodes } = await cdp.send('Accessibility.getFullAXTree');
+  await cdp.detach();
+  const roles = nodes
+    .filter(({ ignored }) => !ignored)
+    .map(({ role }) => String(role?.value))
+    .filter((role) => role === 'list' || role === 'listitem');
+  expect(roles).toEqual(['list', 'listitem', 'listitem', 'listitem']);
+});
+
 // Storybook pads padded stories by 24 px, so drop it to test a true 360 px page.
 for (const id of ['organisms-pricingtable--default', 'organisms-pricingcard--all-variants']) {
   test(`${id} at a true 360px, without the story padding, has no page horizontal scroll`, async ({
