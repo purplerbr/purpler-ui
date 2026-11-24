@@ -99,7 +99,8 @@ export const AsLink: Story = {
 export const LongLabel: Story = {
   args: {
     variant: 'outline',
-    children: 'Doceria e Confeitaria Artesanal da Vó Maria — Unidade Centro',
+    size: 'lg',
+    children: 'Doceria e Confeitaria Artesanal da Vó Maria — Unidade Centro, Shopping Vila Mariana',
   },
   parameters: {
     viewport: {

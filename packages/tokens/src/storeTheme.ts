@@ -20,7 +20,7 @@ export const STORE_RADIUS = {
   sm: { base: '0.375rem', button: '0.375rem' },
   md: { base: '0.625rem', button: '0.625rem' },
   lg: { base: '0.875rem', button: '0.875rem' },
-  full: { base: '1rem', button: '9999px' },
+  full: { base: '1rem', button: '1.5rem' },
 } as const;
 export type StoreRadius = keyof typeof STORE_RADIUS;
 

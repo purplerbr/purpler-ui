@@ -10,7 +10,11 @@ const RADII = [
   { className: 'rounded-lg', label: 'rounded-lg', use: `Cards (base, ${radius.base})` },
   { className: 'rounded-xl', label: 'rounded-xl', use: 'Diálogos e painéis' },
   { className: 'rounded-2xl', label: 'rounded-2xl', use: 'Destaques e banners' },
-  { className: 'rounded-button', label: 'rounded-button', use: 'Botões (pílula na marca)' },
+  {
+    className: 'rounded-button',
+    label: 'rounded-button',
+    use: 'Botões (raio de 24 px: pílula em uma linha, cantos arredondados quando o texto quebra)',
+  },
   { className: 'rounded-full', label: 'rounded-full', use: 'Avatares e indicadores' },
 ] as const;
 
@@ -26,7 +30,7 @@ function ShapePage() {
   return (
     <FoundationPage
       title="Raios e elevação"
-      lead="Botões em pílula, raio base de 0,875rem e sombras quentes e curtas, tingidas de ameixa em vez de preto."
+      lead="Botões em pílula (raio de 24 px, que vira cantos arredondados quando o texto quebra), raio base de 0,875rem e sombras quentes e curtas, tingidas de ameixa em vez de preto."
     >
       <Section
         title="Raios"

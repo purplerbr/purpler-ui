@@ -48,7 +48,7 @@ test('button type, weight, radius and transition come from the tokens', async ({
     'transition-duration',
   ]);
   expect(family).toMatch(/^"?Figtree"?,/);
-  expect([weight, size, lineHeight, radius]).toEqual(['600', '14px', '20px', '9999px']);
+  expect([weight, size, lineHeight, radius]).toEqual(['600', '14px', '20px', '24px']);
   expect([easing, duration]).toEqual(['cubic-bezier(0.2, 0, 0, 1)', '0.15s']);
   expect(await styleOf(large, ['font-size', 'line-height'])).toEqual(['16px', '24px']);
 });
@@ -84,7 +84,7 @@ test('shadows, radii and display type render on the foundation pages', async ({ 
   }
   expect(
     await styleOf(page.locator('.rounded-button').first(), ['border-top-left-radius'])
-  ).toEqual(['9999px']);
+  ).toEqual(['24px']);
   await page.screenshot({ path: shot(info.project.name, 'shape'), fullPage: true });
 
   await openStory(page, 'fundamentos-tipografia--tipografia');

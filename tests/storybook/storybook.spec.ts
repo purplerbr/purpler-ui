@@ -234,11 +234,13 @@ async function wrappedButtonBox(page: Page, name: RegExp) {
       ring: { style: style.outlineStyle, width: style.outlineWidth, offset: style.outlineOffset },
       ringLeft: rect.left - 4,
       ringRight: rect.right + 4,
+      radius: Number.parseFloat(style.borderTopLeftRadius),
+      height: rect.height,
     };
   });
 }
 
-test('a wrapped two-line button shows the focus ring around the whole button', async ({
+test('a wrapped three-line button shows the focus ring around the whole button', async ({
   page,
   browserName,
 }, info) => {
@@ -249,7 +251,7 @@ test('a wrapped two-line button shows the focus ring around the whole button', a
 
   await expect(page.getByRole('button', { name: /Doceria/ })).toBeFocused();
   const box = await wrappedButtonBox(page, /Doceria/);
-  expect(box.lines).toBe(2);
+  expect(box.lines).toBe(3);
   expect(box.ring).toEqual({ style: 'solid', width: '2px', offset: '2px' });
   expect(box.ringLeft).toBeGreaterThanOrEqual(0);
   expect(box.ringRight).toBeLessThanOrEqual(360);
@@ -257,6 +259,25 @@ test('a wrapped two-line button shows the focus ring around the whole button', a
     path: `test-results/screens/${info.project.name}/360/button-long-label-focus.png`,
   });
 });
+
+for (const scheme of SCHEMES) {
+  for (const store of ['purpler', 'rose']) {
+    test(`a multi-line button is a rounded rectangle, not an ellipse (${scheme}, ${store})`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width: 360, height: 800 });
+      await openStory(page, 'atoms-button--long-label', `scheme:${scheme};store:${store}`);
+
+      const box = await wrappedButtonBox(page, /Doceria/);
+      expect(box.lines).toBeGreaterThanOrEqual(3);
+      expect(box.radius).toBeLessThanOrEqual(24);
+      expect(box.height).toBeGreaterThan(48);
+      await page.screenshot({
+        path: `test-results/screens/${info.project.name}/360/button-long-label-${scheme}-${store}.png`,
+      });
+    });
+  }
+}
 
 test('a long label still wraps inside the button while loading, next to the spinner', async ({
   page,

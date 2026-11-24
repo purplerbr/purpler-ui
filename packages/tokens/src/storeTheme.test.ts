@@ -125,7 +125,7 @@ describe('buildStoreTheme', () => {
     const theme = buildStoreTheme({ primary: '#b83b6f', radius: 'full', font: 'lora' });
 
     expect(theme.radius).toBe('1rem');
-    expect(theme.buttonRadius).toBe('9999px');
+    expect(theme.buttonRadius).toBe('1.5rem');
     expect(theme.fontBody).toBe("'Lora', ui-serif, Georgia, 'Times New Roman', serif");
   });
 
