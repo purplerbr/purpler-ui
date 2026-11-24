@@ -1947,6 +1947,7 @@ __metadata:
     react: "npm:~19.2.9"
     react-dom: "npm:~19.2.9"
     shadcn: "npm:~4.23.0"
+    sonner: "npm:2.0.8"
     storybook: "npm:~10.6.8"
     tailwind-merge: "npm:^3.7.1"
     tailwindcss: "npm:~4.3.5"
@@ -9353,6 +9354,20 @@ __metadata:
     ip-address: "npm:^10.1.1"
     smart-buffer: "npm:^4.2.0"
   checksum: 10c0/75de6ed9a204fec5481862cbcf3660e4821cdb48a2850056b426425ae6fdd07f1e7880093e56e927100e36df7b5368a69a25c771f911f4e4349c6ed690049075
+  languageName: node
+  linkType: hard
+
+"sonner@npm:2.0.8":
+  version: 2.0.8
+  resolution: "sonner@npm:2.0.8"
+  peerDependencies:
+    "@types/react": ^18.0.0 || ^19.0.0
+    react: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+    react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/cc271f78dca7e7d7ce34a724883f3292ba671b5ed3d41732430df28c38a8f6a47e8e59da5fdd0b258ac07136db0cdaf02f8cda9afb9cc9f12d81b6c319b427f7
   languageName: node
   linkType: hard
 
