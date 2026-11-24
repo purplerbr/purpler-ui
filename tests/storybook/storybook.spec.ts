@@ -1295,6 +1295,30 @@ test('a table link with invalid params falls back to the defaults without a new 
   expect(await page.evaluate(() => history.length)).toBe(2);
 });
 
+test('a percent-encoded table link opens sorted, and a reload keeps the state', async ({
+  page,
+}) => {
+  await page.goto(`${TABLE_STORY}&sort=na%6De&order=desc&status=act%69ve`);
+  const name = page.getByRole('columnheader', { name: 'Produto' });
+
+  await expect(name).toHaveAttribute('aria-sort', 'descending');
+  await expect(page.getByRole('button', { name: 'Ativos' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  await page.getByRole('button', { name: 'Rascunhos' }).click();
+  await expect.poll(() => query(page)).toEqual({ sort: 'name', order: 'desc', status: 'draft' });
+
+  await page.reload();
+
+  await expect(name).toHaveAttribute('aria-sort', 'descending');
+  await expect(page.getByRole('button', { name: 'Rascunhos' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  expect(query(page)).toEqual({ sort: 'name', order: 'desc', status: 'draft' });
+});
+
 test('the sort button takes Tab and Enter and shows the focus outline', async ({
   page,
   browserName,

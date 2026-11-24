@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   parseTableUrlState,
@@ -240,6 +240,114 @@ describe('useTableUrlState with a router adapter', () => {
     });
     expect(setSearchParams).toHaveBeenLastCalledWith(new URLSearchParams('page=3'), {
       replace: false,
+    });
+  });
+});
+
+describe('parseTableUrlState with untrusted links', () => {
+  it.each([
+    ['sort=hack&sort=name&order=desc', undefined, ''],
+    ['sort=name&sort=price&order=desc&order=asc', 'name', 'sort=name&order=desc'],
+    ['order=desc&order=asc&sort=price', 'price', 'sort=price&order=desc'],
+  ])('reads only the first value of a repeated sort or order in %s', (query, sort, expected) => {
+    const { state, normalized } = parse(query);
+
+    expect(state.sort).toBe(sort);
+    expect(normalized.toString()).toBe(expected);
+  });
+
+  it('keeps the largest page it accepts and drops the next one', () => {
+    expect(parse('page=999999999').state.page).toBe(999999999);
+    expect(parse('page=1000000000').normalized.toString()).toBe('');
+    expect(parse('page=%2B2').normalized.toString()).toBe('');
+    expect(parse('page=2%20').normalized.toString()).toBe('');
+  });
+
+  it('decodes percent-encoded values before checking them', () => {
+    const { state, normalized } = parse('sort=na%6De&status=act%69ve&page=%32');
+
+    expect(state).toMatchObject({ sort: 'name', page: 2, filters: { status: 'active' } });
+    expect(normalized.toString()).toBe('sort=name&status=active&page=2');
+  });
+
+  it('drops a malformed escape without throwing and keeps unmanaged values as decoded', () => {
+    const { state, normalized } = parse('sort=%E0%A4%A&q=caf%C3%A9+azul&Sort=price&tab');
+
+    expect(state.sort).toBeUndefined();
+    expect(normalized.get('q')).toBe('café azul');
+    expect(normalized.get('Sort')).toBe('price');
+    expect(normalized.has('tab')).toBe(true);
+    expect(normalized.has('sort')).toBe(false);
+  });
+});
+
+describe('useTableUrlState actions on untrusted state', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/produtos');
+  });
+  afterEach(() => {
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('goes back to page 1 when the page size changes', () => {
+    window.history.replaceState(null, '', '/produtos?page=3&q=caf%C3%A9');
+    const { result } = renderHook(() => useTableUrlState(CONFIG));
+
+    act(() => {
+      result.current.setLimit(50);
+    });
+
+    expect(window.location.search).toBe('?q=caf%C3%A9&limit=50');
+    expect(result.current.state).toMatchObject({ page: 1, limit: 50 });
+  });
+
+  it('floors a fractional page and clears an invalid one', () => {
+    const { result } = renderHook(() => useTableUrlState(CONFIG));
+
+    act(() => {
+      result.current.setPage(2.7);
+    });
+    expect(window.location.search).toBe('?page=2');
+
+    act(() => {
+      result.current.setPage(Number.NaN);
+    });
+    expect(window.location.search).toBe('');
+  });
+
+  it('flips a default sort that is not in the URL yet', () => {
+    const { result } = renderHook(() =>
+      useTableUrlState({ ...CONFIG, defaultSort: { sort: 'price', order: 'desc' } })
+    );
+
+    act(() => {
+      result.current.toggleSort('price');
+    });
+
+    expect(window.location.search).toBe('?sort=price&order=asc');
+  });
+
+  it('follows a real history back and forward after its own pushes', async () => {
+    const { result } = renderHook(() => useTableUrlState(CONFIG));
+    act(() => {
+      result.current.setPage(2);
+    });
+    act(() => {
+      result.current.toggleSort('name');
+    });
+
+    act(() => {
+      window.history.back();
+    });
+    await waitFor(() => {
+      expect(result.current.state).toMatchObject({ page: 2, sort: undefined });
+    });
+
+    act(() => {
+      window.history.forward();
+    });
+    await waitFor(() => {
+      expect(result.current.state).toMatchObject({ page: 1, sort: 'name', order: 'asc' });
     });
   });
 });

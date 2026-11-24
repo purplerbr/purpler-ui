@@ -100,6 +100,60 @@ describe('FormField', () => {
     expect(onBlur).toHaveBeenCalledTimes(1);
   });
 
+  it('links the ids in order: addons, help text, then the error', () => {
+    render(
+      <FormField label="Preço" id="price" description="Use vírgula." error="Informe o preço.">
+        <Input prefix="R$" suffix="por mês" />
+      </FormField>
+    );
+    const input = screen.getByRole('textbox', { name: 'Preço' });
+    const ids = input.getAttribute('aria-describedby')?.split(' ') ?? [];
+
+    expect(input).toHaveAttribute('id', 'price');
+    expect(input).toHaveAttribute('aria-labelledby', 'price-label');
+    expect(ids.slice(2)).toEqual(['price-description', 'price-error']);
+    expect(input).toHaveAccessibleDescription('R$ por mês Use vírgula. Informe o preço.');
+    expect(document.querySelectorAll('[id="price"]')).toHaveLength(1);
+  });
+
+  it('keeps one alert when the error message changes', () => {
+    const { rerender } = render(
+      <FormField label="Endereço da loja" error="Informe o endereço.">
+        <Input />
+      </FormField>
+    );
+    const alert = screen.getByRole('alert');
+
+    rerender(
+      <FormField label="Endereço da loja" error={SLUG_ERROR}>
+        <Input />
+      </FormField>
+    );
+
+    expect(screen.getAllByRole('alert')).toEqual([alert]);
+    expect(alert).toHaveTextContent(SLUG_ERROR);
+  });
+
+  it('gives each field its own ids when none is given', () => {
+    render(
+      <>
+        <FormField label="Nome" error="Informe o nome.">
+          <Input />
+        </FormField>
+        <FormField label="Sobrenome" error="Informe o sobrenome.">
+          <Input />
+        </FormField>
+      </>
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Nome' })).toHaveAccessibleDescription(
+      'Informe o nome.'
+    );
+    expect(screen.getByRole('textbox', { name: 'Sobrenome' })).toHaveAccessibleDescription(
+      'Informe o sobrenome.'
+    );
+  });
+
   it('names a radio group, which a label element cannot do', () => {
     render(
       <FormField label="Plano" error="Escolha um plano.">
