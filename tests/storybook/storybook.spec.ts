@@ -1514,3 +1514,22 @@ test('while the store loads, the dashboard announces it and hides the store slot
   await expect(page.getByRole('status')).toHaveText('Carregando a loja');
   await expect(page.getByText('Doceria e Confeitaria da Ana')).toHaveCount(0);
 });
+
+test('the store and account slots, rendered in the bar and in the menu, reach assistive tech once', async ({
+  page,
+}) => {
+  const once = async (expected: number) => {
+    await expect(page.getByRole('link', { name: 'Trocar de loja' })).toHaveCount(expected);
+    await expect(page.getByRole('button', { name: 'Sair' })).toHaveCount(expected);
+    await expect(page.getByRole('navigation', { name: 'Principal' })).toHaveCount(expected);
+  };
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--default', 'scheme:light');
+  await once(1);
+  await page.setViewportSize({ width: 360, height: 800 });
+  await once(0);
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await expect(page.getByRole('dialog', { name: 'Menu' })).toBeVisible();
+  await once(1);
+});
