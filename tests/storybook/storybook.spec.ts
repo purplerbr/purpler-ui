@@ -22,6 +22,7 @@ const BUTTON_STORIES = [
 const FORM_STORIES = ['atoms-checkbox--all-variants', 'molecules-alert--all-variants'] as const;
 const CONTENT_STORIES = [
   'atoms-heading--all-variants',
+  'atoms-logo--all-variants',
   'molecules-card--all-variants',
   'atoms-text--all-variants',
   'templates-authlayout--default',
@@ -91,7 +92,8 @@ for (const width of AXE_WIDTHS) {
         expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(
           scheme === 'dark'
         );
-        if (id !== 'atoms-heading--all-variants')
+        // Stories without body text (headings, the logo) never ask for Figtree.
+        if (!['atoms-heading--all-variants', 'atoms-logo--all-variants'].includes(id))
           expect(await page.evaluate(() => document.fonts.check('600 16px Figtree'))).toBe(true);
         if (id === 'atoms-heading--all-variants') await expectHeadingFont(page);
         await expectNoAxeViolations(page);
@@ -144,6 +146,23 @@ for (const preset of ['floresta', 'grafite', 'mostarda']) {
     });
   }
 }
+
+test('the logo keeps the brand colors under a store theme and swaps them in dark', async ({
+  page,
+}) => {
+  const fills = async (globals: string): Promise<string[]> => {
+    await openStory(page, 'atoms-logo--default', globals);
+    return page
+      .locator('[data-slot="logo"] path')
+      .evaluateAll((paths) => paths.map((path) => getComputedStyle(path).fill));
+  };
+
+  const light = await fills('scheme:light');
+  expect(await fills('scheme:light;store:floresta')).toEqual(light);
+  const dark = await fills('scheme:dark');
+  expect(await fills('scheme:dark;store:grafite')).toEqual(dark);
+  expect(dark).not.toEqual(light);
+});
 
 // Safari skips buttons on Tab unless Full Keyboard Access is on; Option+Tab reaches every control.
 const tabKey = (browserName: string): string => (browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
@@ -409,6 +428,7 @@ for (const width of [360, 768, 1280]) {
     for (const id of [
       ...FOUNDATIONS,
       'templates-authlayout--default',
+      'atoms-logo--all-variants',
       ...LOADING_STORIES,
       ...BUTTON_STORIES,
     ]) {
