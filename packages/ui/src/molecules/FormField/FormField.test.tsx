@@ -170,6 +170,20 @@ describe('FormField', () => {
     expect(input).toHaveAccessibleDescription('Aparece no topo da loja.');
   });
 
+  it('follows the control id over its own id prop, since the control keeps its id', () => {
+    render(
+      <FormField label="Nome da loja" id="field-id" error="Informe o nome.">
+        <Input id="control-id" />
+      </FormField>
+    );
+    const input = screen.getByRole('textbox', { name: 'Nome da loja' });
+
+    expect(input).toHaveAttribute('id', 'control-id');
+    expect(screen.getByText('Nome da loja')).toHaveAttribute('for', 'control-id');
+    expect(input).toHaveAccessibleDescription('Informe o nome.');
+    expect(document.getElementById('field-id')).toBeNull();
+  });
+
   it('keeps the control own description first, then the help text and the error', () => {
     render(
       <>
