@@ -170,11 +170,22 @@ test('single-line buttons keep their fixed height in every size, with or without
 }) => {
   await openStory(page, 'atoms-button--all-variants', 'scheme:light');
 
-  for (const name of ['Publicar loja', 'Editar produto', 'Ver todos os pedidos']) {
-    const heights = await page
+  const heightsOf = (name: string | RegExp) =>
+    page
       .getByRole('button', { name, exact: true })
       .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
-    expect(heights, name).toEqual([32, 40, 48]);
+  for (const name of [
+    'Publicar loja',
+    'Ver detalhes',
+    'Editar produto',
+    'Cancelar',
+    'Excluir produto',
+    'Ver todos os pedidos',
+  ]) {
+    expect(await heightsOf(name), name).toEqual([32, 40, 48]);
+  }
+  for (const name of ['Indisponível', 'Salvando', /^Adicionar \(/]) {
+    expect(await heightsOf(name), String(name)).toEqual(Array.from({ length: 6 }, () => 40));
   }
 });
 
@@ -206,6 +217,64 @@ for (const [story, name] of LONG_LABELS) {
     });
   });
 }
+
+async function wrappedButtonBox(page: Page, name: RegExp) {
+  return page.getByRole('button', { name }).evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const label = range.getBoundingClientRect();
+    const spinner = element.querySelector('svg')?.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      lines: new Set([...range.getClientRects()].map(({ top }) => Math.round(top))).size,
+      overflow: element.scrollWidth - element.clientWidth,
+      inside: label.left >= rect.left && label.right <= rect.right && label.bottom <= rect.bottom,
+      spinnerInside: spinner ? spinner.left >= rect.left && spinner.right <= rect.right : null,
+      ring: { style: style.outlineStyle, width: style.outlineWidth, offset: style.outlineOffset },
+      ringLeft: rect.left - 4,
+      ringRight: rect.right + 4,
+    };
+  });
+}
+
+test('a wrapped two-line button shows the focus ring around the whole button', async ({
+  page,
+  browserName,
+}, info) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'atoms-button--long-label', 'scheme:light');
+
+  await page.keyboard.press(tabKey(browserName));
+
+  await expect(page.getByRole('button', { name: /Doceria/ })).toBeFocused();
+  const box = await wrappedButtonBox(page, /Doceria/);
+  expect(box.lines).toBe(2);
+  expect(box.ring).toEqual({ style: 'solid', width: '2px', offset: '2px' });
+  expect(box.ringLeft).toBeGreaterThanOrEqual(0);
+  expect(box.ringRight).toBeLessThanOrEqual(360);
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/360/button-long-label-focus.png`,
+  });
+});
+
+test('a long label still wraps inside the button while loading, next to the spinner', async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'atoms-button--long-label&args=loading:!true', 'scheme:light');
+  const button = page.getByRole('button', { name: /Doceria/ });
+
+  await expect(button).toHaveAttribute('aria-busy', 'true');
+  const box = await wrappedButtonBox(page, /Doceria/);
+  expect(box.lines).toBeGreaterThanOrEqual(2);
+  expect(box.overflow).toBeLessThanOrEqual(0);
+  expect(box.inside).toBe(true);
+  expect(box.spinnerInside).toBe(true);
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/360/button-long-label-loading.png`,
+  });
+});
 
 test('a link-variant button lines up with the text next to it', async ({ page }, info) => {
   await openStory(page, 'atoms-button--link-in-text', 'scheme:light');
