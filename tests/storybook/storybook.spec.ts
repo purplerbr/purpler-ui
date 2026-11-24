@@ -1634,3 +1634,22 @@ test('at 360px the loading store is announced once, from the top bar', async ({ 
     page.locator('[data-slot="dashboard-layout-store-label"] [data-slot="skeleton"]')
   ).toBeVisible();
 });
+
+// The accessibility tree, not the DOM: the hidden sidebar copy and the inert banner behind the menu must not count.
+const storeNameReadings = async (page: Page): Promise<number> =>
+  (await page.locator('body').ariaSnapshot()).split(LONG_STORE_NAME).length - 1;
+
+for (const width of [360, 768, 1280]) {
+  test(`at ${String(width)}px screen readers get the store name once, with the menu closed or open`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await openStory(page, 'templates-dashboardlayout--long-store-name', 'scheme:light');
+
+    await expect.poll(() => storeNameReadings(page)).toBe(1);
+    if (width === 1280) return;
+    await page.getByRole('button', { name: 'Abrir menu' }).click();
+    await expect(page.getByRole('dialog', { name: 'Menu' })).toBeVisible();
+    await expect.poll(() => storeNameReadings(page)).toBe(1);
+  });
+}
