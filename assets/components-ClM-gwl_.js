@@ -1,1 +1,0 @@
-import"./react-DvvP-0SR.js";import"./chunk-W22LQPXL-Dqx6p-Yk.js";import"./react-dom-D9Z4mmdI.js";import{lt as e,ut as t}from"./DocsRenderer-JROSPFPF-DAaItYZw.js";t();export{e as createCopyToClipboardFunction};
