@@ -68,9 +68,37 @@
       "types": "./dist/molecules/Card/index.d.ts",
       "import": "./dist/molecules/Card/index.js"
     },
+    "./empty-state": {
+      "types": "./dist/molecules/EmptyState/index.d.ts",
+      "import": "./dist/molecules/EmptyState/index.js"
+    },
+    "./sheet": {
+      "types": "./dist/molecules/Sheet/index.d.ts",
+      "import": "./dist/molecules/Sheet/index.js"
+    },
+    "./marketing-footer": {
+      "types": "./dist/organisms/MarketingFooter/index.d.ts",
+      "import": "./dist/organisms/MarketingFooter/index.js"
+    },
+    "./marketing-header": {
+      "types": "./dist/organisms/MarketingHeader/index.d.ts",
+      "import": "./dist/organisms/MarketingHeader/index.js"
+    },
+    "./pricing-card": {
+      "types": "./dist/organisms/PricingCard/index.d.ts",
+      "import": "./dist/organisms/PricingCard/index.js"
+    },
+    "./pricing-table": {
+      "types": "./dist/organisms/PricingTable/index.d.ts",
+      "import": "./dist/organisms/PricingTable/index.js"
+    },
     "./auth-layout": {
       "types": "./dist/templates/AuthLayout/index.d.ts",
       "import": "./dist/templates/AuthLayout/index.js"
+    },
+    "./marketing-layout": {
+      "types": "./dist/templates/MarketingLayout/index.d.ts",
+      "import": "./dist/templates/MarketingLayout/index.js"
     },
     "./package.json": "./package.json"
   },
