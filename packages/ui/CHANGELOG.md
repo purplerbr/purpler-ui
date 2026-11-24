@@ -1,5 +1,11 @@
 # @purplerbr/ui
 
+## 0.4.0
+
+### Minor Changes
+
+- f830ee7: New `List` atom (`@purplerbr/ui/list`) with `ListItem`: a `ul` with the brand gap and indent, `marker` `disc` or `none`, aligned to the start even inside centered blocks such as `EmptyState`. It always sets `role="list"`, so Safari and VoiceOver keep announcing it as a list without markers.
+
 ## 0.3.0
 
 ### Minor Changes
