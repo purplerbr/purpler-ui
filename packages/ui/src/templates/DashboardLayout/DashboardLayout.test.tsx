@@ -151,16 +151,47 @@ describe('DashboardLayout', () => {
   });
 
   it('shows a skeleton with a status message while the store loads', () => {
-    render(<Shell storeLoading />);
+    render(<Shell storeLoading storeLabel="Doceria" />);
 
-    expect(screen.getByRole('status')).toHaveTextContent('Carregando a loja');
+    // One in the top bar, one in the sidebar; the CSS shows only one per breakpoint.
+    const statuses = screen.getAllByRole('status');
+    expect(statuses.map((status) => status.textContent)).toEqual([
+      'Carregando a loja',
+      'Carregando a loja',
+    ]);
     expect(screen.queryByText('Doceria da Ana')).not.toBeInTheDocument();
+    expect(screen.queryByText('Doceria')).not.toBeInTheDocument();
+  });
+
+  it('shows the full store label in the banner, after the logo and the menu button', () => {
+    const name = 'Doceria, Confeitaria e Padaria Artesanal da Ana Beatriz de Albuquerque';
+    render(
+      <Shell
+        storeLabel={
+          <>
+            <span className="sr-only">Loja atual: </span>
+            {name}
+          </>
+        }
+      />
+    );
+    const banner = screen.getByRole('banner');
+    const label = within(banner).getByText(name);
+    const logo = within(banner).getByRole('link', { name: 'Purpler, início' });
+    const menuButton = within(banner).getByRole('button', { name: 'Abrir menu' });
+
+    expect(label).toHaveTextContent(`Loja atual: ${name}`);
+    expect(menuButton.compareDocumentPosition(logo)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(logo.compareDocumentPosition(label)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('leaves the store and account areas out when the app passes nothing', () => {
-    render(<Shell store={undefined} account={undefined} />);
+    const { container } = render(<Shell store={undefined} account={undefined} />);
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(
+      container.querySelector('[data-slot="dashboard-layout-store-label"]')
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument();
   });
@@ -319,10 +350,10 @@ describe('DashboardLayout', () => {
 
   it('has no accessibility violations, closed, loading or with the menu open', async () => {
     const user = userEvent.setup();
-    const { container, rerender } = render(<Shell />);
+    const { container, rerender } = render(<Shell storeLabel="Doceria da Ana" />);
 
     expect(await axe(container)).toHaveNoViolations();
-    rerender(<Shell storeLoading />);
+    rerender(<Shell storeLoading storeLabel="Doceria da Ana" />);
     expect(await axe(container)).toHaveNoViolations();
     await openMenu(user);
     expect(await axe(document.body)).toHaveNoViolations();

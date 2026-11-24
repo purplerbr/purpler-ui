@@ -57,11 +57,19 @@ export type DashboardLayoutProps = ComponentProps<'div'> & {
   /** Where the logo leads, usually the start page of the current store. */
   homeHref: string;
   nav: readonly DashboardNavGroup[];
-  /** "Current store" area at the top of the sidebar: store name and a "Trocar de loja" link. */
+  /**
+   * "Current store" area at the top of the sidebar: store name and a "Trocar de loja" link.
+   * Below `lg` it mounts twice with the menu open: no fixed `id` and no effect that cannot run twice.
+   */
   store?: ReactNode;
-  /** Shows a skeleton in place of `store`. */
+  /** Store name in the top bar below `lg`, one line cut with an ellipsis; the full text stays in the DOM. */
+  storeLabel?: ReactNode;
+  /** Shows a skeleton in place of `store` and `storeLabel`. */
   storeLoading?: boolean;
-  /** Sidebar footer, for the account and the sign out button. */
+  /**
+   * Sidebar footer, for the account and the sign out button.
+   * Below `lg` it mounts twice with the menu open: no fixed `id` and no effect that cannot run twice.
+   */
   account?: ReactNode;
   /** Renders every link, so the app can pass its router `Link`; defaults to a plain `<a>`. */
   renderLink?: (props: DashboardLinkProps) => ReactElement;
@@ -112,6 +120,37 @@ function StoreArea({
   );
 }
 
+// Hidden from `lg`, where the sidebar shows `store`; so only one status is exposed at a time.
+function TopBarStore({
+  label,
+  loading,
+  loadingLabel,
+}: {
+  label: ReactNode;
+  loading: boolean;
+  loadingLabel: string;
+}) {
+  const className = 'min-w-0 flex-1 border-l border-sidebar-border pl-3 lg:hidden';
+  if (loading)
+    return (
+      <div data-slot="dashboard-layout-store-label" aria-busy="true" className={className}>
+        <span role="status" className="sr-only">
+          {loadingLabel}
+        </span>
+        <Skeleton className="h-5 w-3/4" />
+      </div>
+    );
+  if (!label) return null;
+  return (
+    <div
+      data-slot="dashboard-layout-store-label"
+      className={cn(className, 'truncate text-small font-semibold')}
+    >
+      {label}
+    </div>
+  );
+}
+
 function NavGroup({
   group,
   renderLink,
@@ -144,7 +183,7 @@ function NavGroup({
   if (!group.label) return list;
   return (
     <div role="group" aria-labelledby={labelId} className="grid gap-1">
-      <span id={labelId} className="px-3 pt-2 text-small font-normal">
+      <span id={labelId} className="px-3 pt-2 text-small font-normal text-muted-foreground">
         {group.label}
       </span>
       {list}
@@ -180,7 +219,7 @@ function SidebarBody(props: {
       {props.account ? (
         <div
           data-slot="dashboard-layout-account"
-          className="mt-auto border-t border-sidebar-border px-3 py-3"
+          className="mt-auto border-t border-sidebar-border px-6 py-2"
         >
           {props.account}
         </div>
@@ -198,6 +237,7 @@ export function DashboardLayout({
   homeHref,
   nav,
   store,
+  storeLabel,
   storeLoading = false,
   account,
   renderLink = renderAnchor,
@@ -295,9 +335,10 @@ export function DashboardLayout({
             href: homeHref,
             end: false,
             className:
-              'inline-flex min-h-11 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sidebar-ring',
+              'inline-flex min-h-11 shrink-0 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sidebar-ring',
             children: <Logo size="sm" aria-label={homeLabel} />,
           })}
+          <TopBarStore label={storeLabel} loading={storeLoading} loadingLabel={storeLoadingLabel} />
         </div>
         <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:gap-2">
           <SidebarBody {...body} />

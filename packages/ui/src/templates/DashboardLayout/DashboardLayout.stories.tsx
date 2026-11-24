@@ -38,26 +38,37 @@ const NAV: readonly DashboardNavGroup[] = [
   },
 ];
 
-const store = (
+const STORE_NAME = 'Doceria e Confeitaria da Ana';
+const LONG_STORE_NAME = 'Doceria, Confeitaria e Padaria Artesanal da Ana Beatriz de Albuquerque';
+
+const storeArea = (name: string) => (
   <div className="grid gap-1">
     <Text as="span" size="small">
       Loja atual
     </Text>
     <Text as="span" className="font-semibold break-words">
-      Doceria e Confeitaria da Ana
+      {name}
     </Text>
-    <Button asChild variant="link" size="sm" className="justify-start px-0">
+    <Button asChild variant="link" size="lg" className="justify-start">
       <a href="#lojas">Trocar de loja</a>
     </Button>
   </div>
 );
 
+// The app passes the short name; the hidden prefix tells screen readers what the name is.
+const storeLabel = (name: string) => (
+  <>
+    <span className="sr-only">Loja atual: </span>
+    {name}
+  </>
+);
+
 const account = (
-  <div className="grid gap-2">
+  <div className="grid gap-1">
     <Text as="span" size="small" className="break-words">
-      ana@doceria.com.br
+      ana@doceria.example
     </Text>
-    <Button variant="ghost" size="sm" className="justify-start">
+    <Button variant="link" size="lg" className="justify-start">
       <LogOut aria-hidden="true" />
       Sair
     </Button>
@@ -91,7 +102,14 @@ const meta = {
   title: 'Templates/DashboardLayout',
   component: DashboardLayout,
   tags: ['autodocs'],
-  args: { homeHref: '#inicio', nav: NAV, store, account, children: <Products /> },
+  args: {
+    homeHref: '#inicio',
+    nav: NAV,
+    store: storeArea(STORE_NAME),
+    storeLabel: storeLabel(STORE_NAME),
+    account,
+    children: <Products />,
+  },
   argTypes: {
     homeHref: { control: 'text', description: 'Destino do logo, em geral o início da loja atual' },
     nav: {
@@ -103,7 +121,15 @@ const meta = {
       control: false,
       description: 'Área “loja atual”: nome da loja e o link “Trocar de loja”, montados pelo app',
     },
-    storeLoading: { control: 'boolean', description: 'Mostra o esqueleto no lugar da loja' },
+    storeLabel: {
+      control: false,
+      description:
+        'Nome da loja na barra do topo abaixo de `lg`, numa linha só com reticências. O texto inteiro fica no DOM para o leitor de tela; o app pode prefixar “Loja atual:” em `sr-only`',
+    },
+    storeLoading: {
+      control: 'boolean',
+      description: 'Mostra o esqueleto no lugar da loja e do nome na barra do topo',
+    },
     account: { control: false, description: 'Rodapé da barra: conta e o botão “Sair”' },
     renderLink: {
       control: false,
@@ -118,7 +144,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Casco do painel do lojista, sempre com a marca Purpler. A partir de `lg`, a barra lateral fica fixa com o logo, a loja atual, a navegação e a conta. Abaixo disso, um botão abre o mesmo conteúdo num `Sheet` (foco preso, `Esc` fecha e o foco volta ao botão; seguir um link fecha o menu). O primeiro Tab mostra “Pular para o conteúdo”. A lib não conhece lojas nem rotas: o app passa a área da loja, a navegação e um `renderLink` com o `NavLink` do roteador, que marca a página atual com `aria-current="page"`. O logo chega com `kind` igual a `home` e deve usar `Link`; o item da página inicial da loja leva `end: true`, para não ficar ativo em todas as rotas. Se a janela chega a `lg` com o menu aberto, ele fecha e o foco vai para o logo.',
+          'Casco do painel do lojista, sempre com a marca Purpler. A partir de `lg`, a barra lateral fica fixa com o logo, a loja atual, a navegação e a conta. Abaixo disso, a barra do topo mostra o logo e o nome da loja atual (`storeLabel`, cortado com reticências), e um botão abre o mesmo conteúdo num `Sheet` (foco preso, `Esc` fecha e o foco volta ao botão; seguir um link fecha o menu). O primeiro Tab mostra “Pular para o conteúdo”. A lib não conhece lojas nem rotas: o app passa a área da loja, a navegação e um `renderLink` com o `NavLink` do roteador, que marca a página atual com `aria-current="page"`. Com o menu aberto abaixo de `lg`, `store` e `account` montam duas vezes: nada de `id` fixo nem de efeito que não possa rodar duas vezes. O logo chega com `kind` igual a `home` e deve usar `Link`; o item da página inicial da loja leva `end: true`, para não ficar ativo em todas as rotas. Se a janela chega a `lg` com o menu aberto, ele fecha e o foco vai para o logo.',
       },
     },
   },
@@ -131,10 +157,21 @@ export const Default: Story = {};
 
 export const StoreLoading: Story = { args: { storeLoading: true } };
 
+export const LongStoreName: Story = {
+  args: { store: storeArea(LONG_STORE_NAME), storeLabel: storeLabel(LONG_STORE_NAME) },
+};
+
+// One layout per page: two would repeat the banner and main landmarks; the other stories cover the rest.
 export const AllVariants: Story = {
   parameters: { controls: { disable: true } },
   render: () => (
-    <DashboardLayout homeHref="#inicio" nav={NAV} store={store} account={account}>
+    <DashboardLayout
+      homeHref="#inicio"
+      nav={NAV}
+      store={storeArea(LONG_STORE_NAME)}
+      storeLabel={storeLabel(LONG_STORE_NAME)}
+      account={account}
+    >
       <Products />
     </DashboardLayout>
   ),
