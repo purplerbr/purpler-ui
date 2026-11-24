@@ -6,6 +6,8 @@ export { Checkbox, checkboxFieldVariants, checkboxVariants } from './atoms/Check
 export type { CheckboxProps } from './atoms/Checkbox';
 export { Heading, headingVariants } from './atoms/Heading';
 export type { HeadingLevel, HeadingProps, HeadingVariants } from './atoms/Heading';
+export { List, ListItem, listVariants } from './atoms/List';
+export type { ListProps, ListVariants } from './atoms/List';
 export { Logo, logoVariants } from './atoms/Logo';
 export type { LogoProps, LogoVariants } from './atoms/Logo';
 export { Skeleton, skeletonVariants } from './atoms/Skeleton';

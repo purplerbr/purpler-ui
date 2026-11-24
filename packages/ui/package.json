@@ -40,6 +40,10 @@
       "types": "./dist/atoms/Heading/index.d.ts",
       "import": "./dist/atoms/Heading/index.js"
     },
+    "./list": {
+      "types": "./dist/atoms/List/index.d.ts",
+      "import": "./dist/atoms/List/index.js"
+    },
     "./logo": {
       "types": "./dist/atoms/Logo/index.d.ts",
       "import": "./dist/atoms/Logo/index.js"
