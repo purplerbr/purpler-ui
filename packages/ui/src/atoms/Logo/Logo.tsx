@@ -15,7 +15,7 @@ export function Logo({ className, size, ...props }: LogoProps) {
   return (
     <svg
       data-slot="logo"
-      viewBox="0 0 134.61 26"
+      viewBox="1.53 0 133.08 26"
       role="img"
       aria-label="Purpler"
       className={cn(logoVariants({ size }), className)}
