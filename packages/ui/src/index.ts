@@ -138,6 +138,18 @@ export type {
 } from './organisms/PricingTable';
 export { AuthLayout, authLayoutVariants } from './templates/AuthLayout';
 export type { AuthLayoutProps } from './templates/AuthLayout';
+export {
+  DashboardLayout,
+  dashboardLayoutVariants,
+  dashboardNavLinkVariants,
+  dashboardSidebarVariants,
+} from './templates/DashboardLayout';
+export type {
+  DashboardLayoutProps,
+  DashboardLinkProps,
+  DashboardNavGroup,
+  DashboardNavItem,
+} from './templates/DashboardLayout';
 export { MarketingLayout, marketingLayoutVariants } from './templates/MarketingLayout';
 export type { MarketingLayoutProps } from './templates/MarketingLayout';
 export { cn } from './utils/cn';
