@@ -1,5 +1,12 @@
 # @purplerbr/ui
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [aba308d]
+  - @purplerbr/tokens@0.2.1
+
 ## 0.2.1
 
 ### Patch Changes
