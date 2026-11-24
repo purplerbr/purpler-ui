@@ -64,6 +64,10 @@ const LOADING_STORIES = [
   'atoms-spinner--page-loading',
   'atoms-skeleton--all-variants',
 ] as const;
+const DASHBOARD_STORIES = [
+  'templates-dashboardlayout--default',
+  'templates-dashboardlayout--store-loading',
+] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
@@ -115,6 +119,7 @@ for (const width of AXE_WIDTHS) {
       ...CONTACT_STORIES,
       ...LOADING_STORIES,
       ...TABLE_STORIES,
+      ...DASHBOARD_STORIES,
     ]) {
       test(`${id} in ${scheme} at ${String(width)}px renders with the brand fonts and no WCAG violations`, async ({
         page,
@@ -544,6 +549,7 @@ for (const width of [360, 768, 1280]) {
       ...LANDING_STORIES,
       ...LOADING_STORIES,
       ...BUTTON_STORIES,
+      ...DASHBOARD_STORIES,
     ]) {
       await openStory(page, id, 'scheme:light');
       const overflow = await page.evaluate(
@@ -1380,4 +1386,184 @@ test('an end-aligned column lines its header up with the numbers below it', asyn
 
   expect(cellRights.length).toBeGreaterThan(0);
   for (const right of cellRights) expect(right).toBeCloseTo(headerRight, 0);
+});
+
+test('at 1280px the dashboard sidebar stays fixed, marks the page and follows the tab order', async ({
+  page,
+  browserName,
+}, info) => {
+  await page.setViewportSize({ width: 1280, height: 400 });
+  await openStory(page, 'templates-dashboardlayout--default', 'scheme:light');
+  const nav = page.getByRole('banner').getByRole('navigation', { name: 'Principal' });
+
+  await expect(page.getByRole('button', { name: 'Abrir menu' })).toBeHidden();
+  await expect(nav.getByRole('link', { name: 'Produtos' })).toHaveAttribute('aria-current', 'page');
+  await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
+  await expect(nav.getByRole('group', { name: 'Catálogo' })).toBeVisible();
+  const order: string[] = [];
+  for (let step = 0; step < 11; step += 1) {
+    await page.keyboard.press(tabKey(browserName));
+    order.push(
+      await page.evaluate(
+        () =>
+          document.activeElement?.getAttribute('aria-label') ??
+          document.activeElement?.textContent ??
+          ''
+      )
+    );
+  }
+  expect(order).toEqual([
+    'Pular para o conteúdo',
+    '',
+    'Trocar de loja',
+    'Início',
+    'Pedidos',
+    'Produtos',
+    'Categorias',
+    'Plano e uso',
+    'Pagamentos',
+    'Configurações',
+    'Sair',
+  ]);
+  const sidebar = page.locator('[data-slot="dashboard-layout-sidebar"]');
+  // A long page, so the content scrolls well past the sidebar's own height.
+  await page.locator('#conteudo').evaluate((main) => {
+    main.style.minHeight = '3000px';
+    scrollTo(0, 1500);
+  });
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(1500);
+  expect((await sidebar.boundingBox())?.y).toBe(0);
+  await page.screenshot({ path: `test-results/screens/${info.project.name}/1280/dashboard.png` });
+});
+
+test('the dashboard skip link shows on the first Tab and moves the focus to the main content', async ({
+  page,
+  browserName,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--default', 'scheme:light');
+  const skip = page.getByRole('link', { name: 'Pular para o conteúdo' });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(skip).toBeFocused();
+  expect((await skip.boundingBox())?.width).toBeGreaterThan(24);
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#conteudo')).toBeFocused();
+});
+
+for (const width of [360, 768]) {
+  for (const scheme of SCHEMES) {
+    test(`at ${String(width)}px in ${scheme} the dashboard menu traps the focus, closes on Esc and returns it`, async ({
+      page,
+      browserName,
+    }, info) => {
+      await page.setViewportSize({ width, height: 800 });
+      await openStory(page, 'templates-dashboardlayout--default', `scheme:${scheme}`);
+      const button = page.getByRole('button', { name: 'Abrir menu' });
+
+      await expect(page.getByRole('banner').getByRole('navigation')).toBeHidden();
+      const box = await button.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+      await page.keyboard.press(tabKey(browserName));
+      await page.keyboard.press(tabKey(browserName));
+      await expect(button).toBeFocused();
+      await page.keyboard.press('Enter');
+      const menu = page.getByRole('dialog', { name: 'Menu' });
+      await expect(menu.getByText('Doceria e Confeitaria da Ana')).toBeVisible();
+      await expect(menu.getByRole('link', { name: 'Produtos' })).toHaveAttribute(
+        'aria-current',
+        'page'
+      );
+      for (let step = 0; step < 14; step += 1) {
+        await page.keyboard.press(tabKey(browserName));
+        expect(await focusedInside(page, '[role="dialog"]')).toBe(true);
+      }
+      await expectNoAxeViolations(page, true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+      await page.screenshot({
+        path: `test-results/screens/${info.project.name}/${String(width)}/${scheme}/dashboard-menu-open.png`,
+      });
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeHidden();
+      await expect(button).toBeFocused();
+    });
+  }
+}
+
+test('following a link from the dashboard menu closes it without sending the focus back', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--default', 'scheme:light');
+
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await page.getByRole('dialog', { name: 'Menu' }).getByRole('link', { name: 'Pedidos' }).click();
+
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(page).toHaveURL(/#pedidos$/);
+  // Neither the menu button nor the logo: the app moves the focus to the new page's h1.
+  await expect(page.locator('body')).toBeFocused();
+});
+
+test('while the store loads, the dashboard announces it and hides the store slot', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--store-loading', 'scheme:light');
+
+  await expect(page.getByRole('status')).toHaveText('Carregando a loja');
+  await expect(page.getByText('Doceria e Confeitaria da Ana')).toHaveCount(0);
+});
+
+test('the store and account slots, rendered in the bar and in the menu, reach assistive tech once', async ({
+  page,
+}) => {
+  const once = async (expected: number) => {
+    await expect(page.getByRole('link', { name: 'Trocar de loja' })).toHaveCount(expected);
+    await expect(page.getByRole('button', { name: 'Sair' })).toHaveCount(expected);
+    await expect(page.getByRole('navigation', { name: 'Principal' })).toHaveCount(expected);
+  };
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--default', 'scheme:light');
+  await once(1);
+  await page.setViewportSize({ width: 360, height: 800 });
+  await once(0);
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await expect(page.getByRole('dialog', { name: 'Menu' })).toBeVisible();
+  await once(1);
+});
+
+test('the open dashboard menu closes when the window grows to the sidebar width, focusing the logo', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--default', 'scheme:light');
+
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await expect(page.getByRole('dialog', { name: 'Menu' })).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 800 });
+
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(page.getByRole('link', { name: 'Purpler, início' })).toBeFocused();
+  await expect(
+    page.getByRole('banner').getByRole('navigation', { name: 'Principal' })
+  ).toBeVisible();
+});
+
+test('a modifier click on a dashboard menu link keeps the menu open and the focus inside', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--default', 'scheme:light');
+
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  const menu = page.getByRole('dialog', { name: 'Menu' });
+  await menu.getByRole('link', { name: 'Pedidos' }).click({ modifiers: ['ControlOrMeta'] });
+
+  await expect(menu).toBeVisible();
+  expect(await focusedInside(page, '[role="dialog"]')).toBe(true);
+  expect(page.url()).not.toMatch(/#pedidos$/);
+  for (const other of page.context().pages()) if (other !== page) await other.close();
 });
