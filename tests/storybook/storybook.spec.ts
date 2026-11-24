@@ -35,6 +35,11 @@ const CONTENT_STORIES = [
   'templates-authlayout--default',
   'templates-authlayout--callback',
 ] as const;
+const CONTACT_STORIES = [
+  'atoms-floatingcontactlink--default',
+  'atoms-floatingcontactlink--all-variants',
+  'atoms-floatingcontactlink--on-marketing-page',
+] as const;
 const LANDING_STORIES = [
   'molecules-sheet--all-variants',
   'molecules-emptystate--all-variants',
@@ -98,6 +103,7 @@ for (const width of AXE_WIDTHS) {
       ...FORM_STORIES,
       ...CONTENT_STORIES,
       ...LANDING_STORIES,
+      ...CONTACT_STORIES,
       ...LOADING_STORIES,
     ]) {
       test(`${id} in ${scheme} at ${String(width)}px renders with the brand fonts and no WCAG violations`, async ({
@@ -515,6 +521,8 @@ for (const width of [360, 768, 1280]) {
   test(`foundation pages and the auth layout have no horizontal scroll at ${String(width)}px`, async ({
     page,
   }, info) => {
+    // About 30 stories in one test: it sat at the 30 s limit even on main, so it gets 90 s.
+    test.slow();
     await page.setViewportSize({ width, height: 900 });
     for (const id of [
       ...FOUNDATIONS,
@@ -788,6 +796,197 @@ test('a list without markers keeps its list and listitem roles in the accessibil
     .filter((role) => role === 'list' || role === 'listitem');
   expect(roles).toEqual(['list', 'listitem', 'listitem', 'listitem']);
 });
+
+const CONTACT_NAME = 'Conversar pelo WhatsApp (abre em nova aba)';
+
+type Box = { x: number; y: number; width: number; height: number };
+const overlaps = (a: Box, b: Box): boolean =>
+  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+const contains = (outer: Box, inner: Box): boolean =>
+  inner.x >= outer.x &&
+  inner.y >= outer.y &&
+  inner.x + inner.width <= outer.x + outer.width &&
+  inner.y + inner.height <= outer.y + outer.height;
+
+// True when the topmost element at the link's center is not the link: something covers it.
+// A modal sets pointer-events: none on the body, which hit testing skips, so restore it first.
+async function isCovered(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    const link = document.querySelector<HTMLElement>('[data-slot="floating-contact-link"]');
+    if (!link) return false;
+    const { x, y, width, height } = link.getBoundingClientRect();
+    link.style.pointerEvents = 'auto';
+    const covered = !link.contains(document.elementFromPoint(x + width / 2, y + height / 2));
+    link.style.pointerEvents = '';
+    return covered;
+  });
+}
+
+for (const width of [360, 1280]) {
+  test(`at ${String(width)}px the contact link sits in the corner with a 44px target`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 800 });
+    await openStory(page, 'atoms-floatingcontactlink--default', 'scheme:light');
+    const link = page.getByRole('link', { name: CONTACT_NAME });
+    const box = await link.boundingBox();
+
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    expect(width - ((box?.x ?? 0) + (box?.width ?? 0))).toBeGreaterThanOrEqual(16);
+    expect(800 - ((box?.y ?? 0) + (box?.height ?? 0))).toBeGreaterThanOrEqual(16);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    const label = link.getByText('Conversar pelo WhatsApp', { exact: true });
+    if (width === 360) await expect(label).toBeHidden();
+    else await expect(label).toBeVisible();
+    await page.screenshot({
+      path: `test-results/screens/${info.project.name}/${String(width)}/floating-contact.png`,
+    });
+  });
+}
+
+// Desktop browsers report a zero safe area, so check the offsets the browser parsed for the link.
+test('the contact link offsets add the safe-area insets to its 16px gap', async ({ page }) => {
+  await openStory(page, 'atoms-floatingcontactlink--default', 'scheme:light');
+
+  const offsets = await page.evaluate(() => {
+    const link = document.querySelector('[data-slot="floating-contact-link"]');
+    const found: Record<string, string> = {};
+    const visit = (rules: CSSRuleList) => {
+      for (const rule of rules) {
+        if (rule instanceof CSSGroupingRule) visit(rule.cssRules);
+        if (!(rule instanceof CSSStyleRule) || !link?.matches(rule.selectorText)) continue;
+        for (const side of ['right', 'bottom']) {
+          const value = rule.style.getPropertyValue(side);
+          if (value) found[side] = value.replaceAll(' ', '');
+        }
+      }
+    };
+    for (const sheet of document.styleSheets) visit(sheet.cssRules);
+    return found;
+  });
+
+  expect(offsets.right).toContain('env(safe-area-inset-right)');
+  expect(offsets.bottom).toContain('env(safe-area-inset-bottom)');
+});
+
+test('the contact link is reachable with Tab and shows a 2px focus outline', async ({
+  page,
+  browserName,
+}, info) => {
+  await openStory(page, 'atoms-floatingcontactlink--default', 'scheme:dark');
+  const link = page.getByRole('link', { name: CONTACT_NAME });
+
+  await page.keyboard.press(tabKey(browserName));
+
+  await expect(link).toBeFocused();
+  const outline = await link.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { style: style.outlineStyle, width: style.outlineWidth };
+  });
+  expect(outline).toEqual({ style: 'solid', width: '2px' });
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/floating-contact-focus.png`,
+  });
+});
+
+test('at 360px the contact link overlaps neither the header controls nor a focused footer link', async ({
+  page,
+  browserName,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'atoms-floatingcontactlink--on-marketing-page', 'scheme:light');
+  const contact = await page.getByRole('link', { name: CONTACT_NAME }).boundingBox();
+  if (!contact) throw new Error('contact link not rendered');
+
+  await page.keyboard.press(tabKey(browserName));
+  const skip = page.getByRole('link', { name: 'Pular para o conteúdo' });
+  await expect(skip).toBeFocused();
+  for (const control of [
+    skip,
+    page.getByRole('button', { name: 'Abrir menu' }),
+    page.getByRole('link', { name: 'Começar grátis' }),
+  ]) {
+    const box = await control.boundingBox();
+    expect(box && overlaps(box, contact)).toBe(false);
+  }
+  // WCAG 2.4.11: a focused footer link is never fully hidden under the fixed link.
+  const footer = page.getByRole('contentinfo');
+  for (const target of await footer.getByRole('link').all()) {
+    await target.focus();
+    const box = await target.boundingBox();
+    expect(box && contains(contact, box)).toBe(false);
+  }
+});
+
+test('at 360px the open header menu covers the contact link and keeps it out of Tab', async ({
+  page,
+  browserName,
+}, info) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'atoms-floatingcontactlink--on-marketing-page', 'scheme:light');
+
+  expect(await isCovered(page)).toBe(false);
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  const menu = page.getByRole('dialog', { name: 'Menu' });
+  await expect(menu).toBeVisible();
+  expect(await isCovered(page)).toBe(true);
+  for (let step = 0; step < 4; step += 1) {
+    await page.keyboard.press(tabKey(browserName));
+    expect(await focusedInside(page, '[role="dialog"]')).toBe(true);
+  }
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/360/floating-contact-menu-open.png`,
+  });
+});
+
+for (const width of AXE_WIDTHS) {
+  for (const scheme of SCHEMES) {
+    test(`with a sheet open in ${scheme} at ${String(width)}px the contact link stays under it, with no WCAG violations`, async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width, height: 800 });
+      await openStory(page, 'atoms-floatingcontactlink--with-sheet-open', `scheme:${scheme}`);
+
+      await expect(page.getByRole('dialog', { name: 'Menu' })).toBeVisible();
+      expect(await isCovered(page)).toBe(true);
+      await expectNoAxeViolations(page, true);
+      await page.screenshot({
+        path: `test-results/screens/${info.project.name}/${String(width)}/${scheme}/floating-contact-sheet-open.png`,
+      });
+    });
+  }
+}
+
+for (const width of [360, 1280]) {
+  test(`without JavaScript at ${String(width)}px the contact link shows and keeps its destination`, async ({
+    page,
+    browser,
+  }, info) => {
+    await openStory(page, 'atoms-floatingcontactlink--on-marketing-page', 'scheme:light');
+    const html = (await page.content()).replaceAll(/<script\b[\s\S]*?<\/script>/g, '');
+    const origin = new URL(page.url()).origin;
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width, height: 800 },
+    });
+    const noJs = await context.newPage();
+    await noJs.route(`${origin}/no-js.html`, (route) =>
+      route.fulfill({ contentType: 'text/html', body: html })
+    );
+    await noJs.goto(`${origin}/no-js.html`);
+
+    const link = noJs.getByRole('link', { name: CONTACT_NAME });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', '#conversar');
+    await expect(link).toHaveAttribute('target', '_blank');
+    await noJs.screenshot({
+      path: `test-results/screens/${info.project.name}/${String(width)}/floating-contact-no-js.png`,
+    });
+    await context.close();
+  });
+}
 
 // Storybook pads padded stories by 24 px, so drop it to test a true 360 px page.
 for (const id of ['organisms-pricingtable--default', 'organisms-pricingcard--all-variants']) {

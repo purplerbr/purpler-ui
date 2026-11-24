@@ -36,6 +36,10 @@
       "types": "./dist/atoms/Checkbox/index.d.ts",
       "import": "./dist/atoms/Checkbox/index.js"
     },
+    "./floating-contact-link": {
+      "types": "./dist/atoms/FloatingContactLink/index.d.ts",
+      "import": "./dist/atoms/FloatingContactLink/index.js"
+    },
     "./heading": {
       "types": "./dist/atoms/Heading/index.d.ts",
       "import": "./dist/atoms/Heading/index.js"

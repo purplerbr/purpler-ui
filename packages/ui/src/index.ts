@@ -4,6 +4,8 @@ export { Button, buttonVariants } from './atoms/Button';
 export type { ButtonProps, ButtonVariants } from './atoms/Button';
 export { Checkbox, checkboxFieldVariants, checkboxVariants } from './atoms/Checkbox';
 export type { CheckboxProps } from './atoms/Checkbox';
+export { FloatingContactLink, floatingContactLinkVariants } from './atoms/FloatingContactLink';
+export type { FloatingContactLinkProps } from './atoms/FloatingContactLink';
 export { Heading, headingVariants } from './atoms/Heading';
 export type { HeadingLevel, HeadingProps, HeadingVariants } from './atoms/Heading';
 export { List, ListItem, listVariants } from './atoms/List';
