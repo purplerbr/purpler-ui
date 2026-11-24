@@ -56,6 +56,10 @@
       "types": "./dist/atoms/Text/index.d.ts",
       "import": "./dist/atoms/Text/index.js"
     },
+    "./accordion": {
+      "types": "./dist/molecules/Accordion/index.d.ts",
+      "import": "./dist/molecules/Accordion/index.js"
+    },
     "./alert": {
       "types": "./dist/molecules/Alert/index.d.ts",
       "import": "./dist/molecules/Alert/index.js"
