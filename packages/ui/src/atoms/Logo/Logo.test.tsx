@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';
+import logoMono from '../../assets/brand/logo-mono.svg?raw';
 import { Logo } from './Logo';
 
 describe('Logo', () => {
@@ -43,6 +44,17 @@ describe('Logo', () => {
     const logo = screen.getByRole('img', { name: 'Purpler' });
     expect(ref.current).toBe(logo);
     expect(logo).toHaveAttribute('id', 'brand');
+  });
+
+  it('draws the same geometry as the brand file', () => {
+    const asset = new DOMParser().parseFromString(logoMono, 'image/svg+xml').documentElement;
+    render(<Logo />);
+
+    const logo = screen.getByRole('img', { name: 'Purpler' });
+    expect(logo).toHaveAttribute('viewBox', asset.getAttribute('viewBox'));
+    const paths = (svg: Element) =>
+      [...svg.querySelectorAll('path')].map((path) => path.getAttribute('d'));
+    expect(paths(logo)).toEqual(paths(asset));
   });
 
   it('has no accessibility violations', async () => {
