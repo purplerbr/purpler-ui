@@ -386,6 +386,33 @@ test('the accordion opens with Enter, closes with Space and shows the focus outl
   await expect(answer).toBeHidden();
 });
 
+test('the accordion question announces whether its answer is expanded', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'molecules-accordion--default', 'scheme:light');
+  const name = 'Preciso ter CNPJ para abrir minha loja?';
+  const question = page.locator('summary', { hasText: name });
+  // Only Chromium exposes its accessibility tree to tests; WebKit maps the same native open state.
+  const expanded = async (): Promise<unknown> => {
+    if (browserName !== 'chromium')
+      return question.evaluate((summary) => summary.parentElement?.hasAttribute('open'));
+    const cdp = await page.context().newCDPSession(page);
+    const { nodes } = await cdp.send('Accessibility.getFullAXTree');
+    await cdp.detach();
+    const node = nodes.find(
+      ({ role, name: label }) => role?.value === 'DisclosureTriangle' && label?.value === name
+    );
+    return node?.properties?.find((property) => property.name === 'expanded')?.value.value;
+  };
+
+  await expect.poll(expanded).toBe(false);
+  await question.click();
+  await expect.poll(expanded).toBe(true);
+  await question.click();
+  await expect.poll(expanded).toBe(false);
+});
+
 test('accordion items sharing a name keep only one open', async ({ page }) => {
   await openStory(page, 'molecules-accordion--one-at-a-time', 'scheme:light');
 
