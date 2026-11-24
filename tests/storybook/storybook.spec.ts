@@ -19,7 +19,11 @@ const BUTTON_STORIES = [
   'atoms-button--long-word',
   'atoms-button--link-in-text',
 ] as const;
-const FORM_STORIES = ['atoms-checkbox--all-variants', 'molecules-alert--all-variants'] as const;
+const FORM_STORIES = [
+  'atoms-checkbox--all-variants',
+  'molecules-alert--all-variants',
+  'atoms-badge--all-variants',
+] as const;
 const CONTENT_STORIES = [
   'atoms-heading--all-variants',
   'atoms-logo--all-variants',
@@ -139,6 +143,8 @@ for (const preset of ['floresta', 'grafite', 'mostarda']) {
       await expect(page.getByRole('cell', { name: 'Falha', exact: true })).toHaveCount(0);
       await expectNoAxeViolations(page);
       await openStory(page, 'atoms-button--all-variants', `scheme:${scheme};store:${preset}`);
+      await expectNoAxeViolations(page);
+      await openStory(page, 'atoms-badge--all-variants', `scheme:${scheme};store:${preset}`);
       await expectNoAxeViolations(page);
       await page.screenshot({
         path: `test-results/screens/${info.project.name}/${scheme}/store-${preset}-buttons.png`,
@@ -429,6 +435,7 @@ for (const width of [360, 768, 1280]) {
       ...FOUNDATIONS,
       'templates-authlayout--default',
       'atoms-logo--all-variants',
+      'atoms-badge--all-variants',
       ...LOADING_STORIES,
       ...BUTTON_STORIES,
     ]) {
