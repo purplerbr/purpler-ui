@@ -67,6 +67,7 @@ const LOADING_STORIES = [
 const DASHBOARD_STORIES = [
   'templates-dashboardlayout--default',
   'templates-dashboardlayout--store-loading',
+  'templates-dashboardlayout--long-store-name',
 ] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -1567,3 +1568,88 @@ test('a modifier click on a dashboard menu link keeps the menu open and the focu
   expect(page.url()).not.toMatch(/#pedidos$/);
   for (const other of page.context().pages()) if (other !== page) await other.close();
 });
+
+const LONG_STORE_NAME = 'Doceria, Confeitaria e Padaria Artesanal da Ana Beatriz de Albuquerque';
+
+for (const width of [360, 768]) {
+  test(`at ${String(width)}px the dashboard top bar shows the current store, cut with an ellipsis`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 800 });
+    await openStory(page, 'templates-dashboardlayout--long-store-name', 'scheme:light');
+    const banner = page.getByRole('banner');
+    const label = banner.locator('[data-slot="dashboard-layout-store-label"]');
+
+    await expect(label).toBeVisible();
+    await expect(label).toHaveText(`Loja atual: ${LONG_STORE_NAME}`);
+    // At 768px this name fits; at 360px it must be cut, not wrap or push the menu button.
+    expect(await label.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(width === 360);
+    expect(await label.evaluate((el) => getComputedStyle(el).textOverflow)).toBe('ellipsis');
+    for (const target of [
+      banner.getByRole('button', { name: 'Abrir menu' }),
+      banner.getByRole('link', { name: 'Purpler, início' }),
+    ]) {
+      const box = await target.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+      expect(box?.x).toBeGreaterThanOrEqual(0);
+    }
+    const labelBox = await label.boundingBox();
+    expect((labelBox?.x ?? 0) + (labelBox?.width ?? 0)).toBeLessThanOrEqual(width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+    await page.screenshot({
+      path: `test-results/screens/${info.project.name}/${String(width)}/dashboard-store-label.png`,
+    });
+
+    await page.getByRole('button', { name: 'Abrir menu' }).click();
+    const menu = page.getByRole('dialog', { name: 'Menu' });
+    await expect(menu.getByText(LONG_STORE_NAME)).toBeVisible();
+    for (const target of [
+      menu.getByRole('link', { name: 'Trocar de loja' }),
+      menu.getByRole('button', { name: 'Sair' }),
+    ])
+      expect((await target.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  });
+}
+
+test('at 1280px the store label leaves the top bar and the sidebar shows the store', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--long-store-name', 'scheme:light');
+
+  await expect(page.locator('[data-slot="dashboard-layout-store-label"]')).toBeHidden();
+  await expect(
+    page.getByRole('banner').getByText(LONG_STORE_NAME).filter({ visible: true })
+  ).toHaveCount(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+});
+
+test('at 360px the loading store is announced once, from the top bar', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'templates-dashboardlayout--store-loading', 'scheme:light');
+
+  await expect(page.getByRole('status')).toHaveText('Carregando a loja');
+  await expect(
+    page.locator('[data-slot="dashboard-layout-store-label"] [data-slot="skeleton"]')
+  ).toBeVisible();
+});
+
+// The accessibility tree, not the DOM: the hidden sidebar copy and the inert banner behind the menu must not count.
+const storeNameReadings = async (page: Page): Promise<number> =>
+  (await page.locator('body').ariaSnapshot()).split(LONG_STORE_NAME).length - 1;
+
+for (const width of [360, 768, 1280]) {
+  test(`at ${String(width)}px screen readers get the store name once, with the menu closed or open`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await openStory(page, 'templates-dashboardlayout--long-store-name', 'scheme:light');
+
+    await expect.poll(() => storeNameReadings(page)).toBe(1);
+    if (width === 1280) return;
+    await page.getByRole('button', { name: 'Abrir menu' }).click();
+    await expect(page.getByRole('dialog', { name: 'Menu' })).toBeVisible();
+    await expect.poll(() => storeNameReadings(page)).toBe(1);
+  });
+}

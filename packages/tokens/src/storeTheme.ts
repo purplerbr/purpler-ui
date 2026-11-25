@@ -109,7 +109,7 @@ function buildLight(primary: Oklch, accent: Oklch): StoreColors {
   const sidebar = render(n(100));
   const surfaces = [background, card];
   const foreground = fit(n(950), surfaces, TEXT, DARKER);
-  const brand = fit(primary, surfaces, TEXT, DARKER);
+  const brand = fit(primary, [...surfaces, sidebar], TEXT, DARKER);
   const brandForeground = pickForeground(brand, [WHITE, foreground]);
   const secondary = render(tone(primary.h, 0.94, Math.min(primary.c, 0.04)));
   const accentSurface = render(tone(accent.h, 0.96, Math.min(accent.c, 0.035)));

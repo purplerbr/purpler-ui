@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { CONTRAST_MINIMUM, contrastRatio, isInSrgbGamut, parseOklch } from './color';
+import { CONTRAST_MINIMUM, contrastRatio, isInSrgbGamut, parseOklch, toOklch } from './color';
 import { fontStack } from './fonts';
 import { SEMANTIC_PAIRS, SEMANTIC_TOKENS } from './semantic';
 import {
@@ -108,6 +108,26 @@ describe('buildStoreTheme', () => {
     expect(contrastRatio(navy.dark.background, navy.dark.primary)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(navy.light.primary, '#0a1a4f')).toBeLessThan(1.02);
     expect(contrastRatio(yellow.light.primary, '#ffd400')).toBeGreaterThan(2);
+  });
+
+  it('moves a light primary only until it reaches AA on background, card and sidebar (property)', () => {
+    fc.assert(
+      fc.property(hexColor, (primary) => {
+        const { light } = buildStoreTheme({ primary });
+        if (contrastRatio(light.primary, primary) < 1.02) return;
+        const surfaces = [light.background, light.card, light.sidebar];
+        const worst = Math.min(...surfaces.map((surface) => contrastRatio(surface, light.primary)));
+        const input = toOklch(primary);
+        const output = toOklch(light.primary);
+
+        expect(worst).toBeGreaterThanOrEqual(CONTRAST_MINIMUM.text);
+        // Each lightness step moves the ratio by under 0.1, so a minimal fit stays below 4.7:1.
+        expect(worst).toBeLessThan(4.7);
+        expect(output.l).toBeLessThan(input.l);
+        if (output.c > 0.02) expect(Math.abs(output.h - input.h)).toBeLessThanOrEqual(0.06);
+      }),
+      { numRuns: 400, seed: 20261124 }
+    );
   });
 
   it('uses the defaults: lg radius, Figtree and the primary as accent', () => {
