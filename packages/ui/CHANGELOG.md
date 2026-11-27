@@ -1,5 +1,12 @@
 # @purplerbr/ui
 
+## 0.12.0
+
+### Minor Changes
+
+- 017468d: Add `ImageUploader` (`@purplerbr/ui/image-uploader`): the image list of a form, UI only (the app uploads). A drop zone takes files by drag and drop anywhere on it, by click and by keyboard, and sends to `onFilesSelected` only the files within `accept`, `maxSize` and `maxFiles`; the others are listed with the reason. Each image shows a thumbnail, the upload progress, "Processando…" or the error with "Tentar de novo" (`onRetry`); the first one is the cover. Images reorder by drag and drop or with the move buttons (`onReorder`), are removed with `onRemove`, and every change is announced in an `aria-live` region while the focus follows the moved image.
+- 2f65d0f: Add `Select` (`@purplerbr/ui/select`): one choice in a list, on Radix Select in the shadcn style, with the same box as `Input`. It takes `options` (`{ value, label, disabled? }`), `placeholder`, `value`/`defaultValue`/`onValueChange` and `disabled`, and is named, described and marked invalid by `FormField` (or `aria-label`). `allLabel` adds a first option meaning "no filter", such as "Todas as categorias", reported as `''`.
+
 ## 0.11.0
 
 ### Minor Changes
