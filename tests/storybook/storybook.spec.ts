@@ -25,6 +25,7 @@ const FORM_STORIES = [
   'atoms-label--all-variants',
   'atoms-radiogroup--all-variants',
   'molecules-formfield--all-variants',
+  'molecules-select--all-variants',
   'molecules-alert--all-variants',
   'atoms-badge--all-variants',
 ] as const;
@@ -1088,6 +1089,7 @@ for (const id of [
   'organisms-pricingtable--default',
   'organisms-pricingcard--all-variants',
   'molecules-formfield--all-variants',
+  'molecules-select--all-variants',
   'atoms-radiogroup--all-variants',
   'organisms-datatable--with-filters',
 ]) {
@@ -1799,3 +1801,81 @@ test('an open ConsentBanner keeps the focus, the page end and the floating link 
   const note = await page.getByText('© 2026 Purpler').boundingBox();
   expect((note?.y ?? 0) + (note?.height ?? 0)).toBeLessThanOrEqual(await top());
 });
+
+test('the select takes Tab, opens with Enter, picks with the arrows and returns the focus', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'molecules-select--with-form-field', 'scheme:light');
+  const trigger = page.getByRole('combobox', { name: 'Categoria' });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(trigger).toBeFocused();
+  expect(await outlineOf(trigger)).toEqual({ style: 'solid', width: '2px' });
+  await page.keyboard.press('Enter');
+  const listbox = page.getByRole('listbox');
+  await expect(page.getByRole('option', { name: 'Bolos' })).toBeFocused();
+  await expect(page.getByRole('option', { name: 'Bebidas' })).toHaveAttribute(
+    'aria-disabled',
+    'true'
+  );
+  await page.keyboard.press(tabKey(browserName));
+  expect(await focusedInside(page, '[role="listbox"]')).toBe(true);
+  // Radix moves the highlight on a timer, so wait for it before Enter.
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('option', { name: 'Doces' })).toBeFocused();
+  await page.keyboard.press('Enter');
+
+  await expect(listbox).toBeHidden();
+  await expect(trigger).toHaveText('Doces');
+  await expect(trigger).toBeFocused();
+
+  await page.keyboard.press('Enter');
+  await expect(listbox).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(listbox).toBeHidden();
+  await expect(trigger).toHaveText('Doces');
+  await expect(trigger).toBeFocused();
+});
+
+test('the select “all” option comes first and can be picked back', async ({ page }) => {
+  await openStory(page, 'molecules-select--all-option', 'scheme:light');
+  const trigger = page.getByRole('combobox', { name: 'Filtrar por categoria' });
+  await expect(trigger).toHaveText('Todas as categorias');
+
+  await trigger.click();
+  await page.getByRole('option', { name: 'Salgados' }).click();
+  await expect(trigger).toHaveText('Salgados');
+  await trigger.click();
+  await expect(page.getByRole('option').first()).toHaveText('Todas as categorias');
+  await page.getByRole('option', { name: 'Todas as categorias' }).click();
+
+  await expect(trigger).toHaveText('Todas as categorias');
+});
+
+for (const width of AXE_WIDTHS) {
+  for (const scheme of SCHEMES) {
+    test(`the open select in ${scheme} at ${String(width)}px fits the viewport with no WCAG violations`, async ({
+      page,
+    }, info) => {
+      // Radix hides the page while the list is open; Tab stays in the list (test above), so axe checks the list.
+      await page.setViewportSize({ width, height: 800 });
+      await openStory(page, 'molecules-select--with-error', `scheme:${scheme}`);
+      await page.getByRole('combobox', { name: 'Categoria' }).click();
+
+      const listbox = page.getByRole('listbox');
+      await expect(listbox).toBeVisible();
+      const box = await listbox.boundingBox();
+      expect((box?.x ?? -1) >= 0 && (box?.x ?? 0) + (box?.width ?? 0) <= width).toBe(true);
+      await expect(page.locator('#storybook-root')).toHaveAttribute('aria-hidden', 'true');
+      const results = await new AxeBuilder({ page })
+        .withTags(WCAG_TAGS)
+        .include('[role="listbox"]')
+        .analyze();
+      expect(results.violations.map(({ id }) => id)).toEqual([]);
+      await page.screenshot({
+        path: `test-results/screens/${info.project.name}/${String(width)}/${scheme}/select-open.png`,
+      });
+    });
+  }
+}
