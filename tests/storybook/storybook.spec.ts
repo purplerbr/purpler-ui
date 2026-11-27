@@ -633,6 +633,27 @@ test('the alert dialog opens with the keyboard on cancel, keeps Tab inside, igno
   await expect(trigger).toBeFocused();
 });
 
+for (const scheme of SCHEMES) {
+  test(`the loading alert dialog action in ${scheme} keeps the focus, ignores Enter and stays open with no WCAG violations`, async ({
+    page,
+    browserName,
+  }) => {
+    await openStory(page, 'molecules-alertdialog--loading', `scheme:${scheme}`);
+    const dialog = page.getByRole('alertdialog', { name: 'Cancelar a assinatura?' });
+    const action = dialog.getByRole('button', { name: 'Cancelar assinatura' });
+
+    await expect(dialog.getByRole('button', { name: 'Manter assinatura' })).toBeFocused();
+    await page.keyboard.press(tabKey(browserName));
+    await expect(action).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(dialog).toBeVisible();
+    await expect(action).toBeFocused();
+    await expect(action).toHaveAttribute('aria-busy', 'true');
+    await expectNoAxeViolations(page, true);
+  });
+}
+
 for (const width of [360, 768, 1280]) {
   for (const scheme of SCHEMES) {
     for (const variant of ['destructive', 'primary']) {

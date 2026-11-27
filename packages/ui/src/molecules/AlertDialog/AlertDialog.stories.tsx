@@ -34,8 +34,12 @@ const COPY = {
 
 function Example({
   variant = 'destructive',
+  loading = false,
   defaultOpen = false,
-}: Pick<AlertDialogActionProps, 'variant'> & { defaultOpen?: boolean }) {
+}: Pick<AlertDialogActionProps, 'variant'> & {
+  loading?: boolean | undefined;
+  defaultOpen?: boolean;
+}) {
   const copy = variant === 'primary' ? COPY.primary : COPY.destructive;
   return (
     <AlertDialog defaultOpen={defaultOpen}>
@@ -49,7 +53,9 @@ function Example({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{copy.cancel}</AlertDialogCancel>
-          <AlertDialogAction variant={variant}>{copy.action}</AlertDialogAction>
+          <AlertDialogAction variant={variant} loading={loading}>
+            {copy.action}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -60,23 +66,28 @@ const meta = {
   title: 'Molecules/AlertDialog',
   component: AlertDialogAction,
   tags: ['autodocs'],
-  args: { variant: 'destructive' },
+  args: { variant: 'destructive', loading: false },
   argTypes: {
     variant: {
       control: 'select',
       options: ACTION_VARIANTS,
       description: 'Variante do Button na ação; `destructive` quando não dá para desfazer',
     },
+    loading: {
+      control: 'boolean',
+      description:
+        'Enquanto a ação roda: mostra o indicador, mantém o foco e não fecha nem dispara',
+    },
   },
   parameters: {
     docs: {
       description: {
         component:
-          'Confirmação sobre o AlertDialog do Radix: prende o foco, começa no botão de cancelar, fecha com Esc e devolve o foco a quem o abriu. Clicar fora não fecha. Todo diálogo precisa de `AlertDialogTitle` e `AlertDialogDescription`. A ação fecha o diálogo no clique; para esperar uma requisição, chame `event.preventDefault()` no `onClick` e controle o diálogo por `open` e `onOpenChange`.',
+          'Confirmação sobre o AlertDialog do Radix: prende o foco, começa no botão de cancelar, fecha com Esc e devolve o foco a quem o abriu. Clicar fora não fecha. Todo diálogo precisa de `AlertDialogTitle` e `AlertDialogDescription`. A ação fecha o diálogo no clique; para esperar uma requisição, chame `event.preventDefault()` no `onClick`, controle o diálogo por `open` e `onOpenChange` e passe `loading` à ação enquanto a requisição roda: o botão mantém o foco, mostra o indicador e ignora novos cliques.',
       },
     },
   },
-  render: ({ variant }) => <Example variant={variant} />,
+  render: ({ variant, loading }) => <Example variant={variant} loading={loading} />,
 } satisfies Meta<typeof AlertDialogAction>;
 
 export default meta;
@@ -84,7 +95,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const Open: Story = { render: ({ variant }) => <Example variant={variant} defaultOpen /> };
+export const Open: Story = {
+  render: ({ variant, loading }) => <Example variant={variant} loading={loading} defaultOpen />,
+};
+
+export const Loading: Story = { ...Open, args: { loading: true } };
 
 export const Primary: Story = { args: { variant: 'primary' } };
 
