@@ -58,6 +58,23 @@ export type {
 export { Alert, AlertDescription, AlertTitle, alertVariants } from './molecules/Alert';
 export type { AlertProps, AlertVariants } from './molecules/Alert';
 export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  alertDialogContentVariants,
+} from './molecules/AlertDialog';
+export type {
+  AlertDialogActionProps,
+  AlertDialogCancelProps,
+  AlertDialogProps,
+} from './molecules/AlertDialog';
+export {
   Card,
   CardContent,
   CardDescription,

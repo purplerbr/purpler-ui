@@ -84,6 +84,10 @@
       "types": "./dist/molecules/Alert/index.d.ts",
       "import": "./dist/molecules/Alert/index.js"
     },
+    "./alert-dialog": {
+      "types": "./dist/molecules/AlertDialog/index.d.ts",
+      "import": "./dist/molecules/AlertDialog/index.js"
+    },
     "./card": {
       "types": "./dist/molecules/Card/index.d.ts",
       "import": "./dist/molecules/Card/index.js"
