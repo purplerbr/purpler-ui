@@ -143,6 +143,19 @@ export type {
   TableUrlStateConfig,
 } from './organisms/DataTable';
 export {
+  ImageUploader,
+  imageUploaderDropzoneVariants,
+  imageUploaderListVariants,
+  imageUploaderProgressVariants,
+  imageUploaderTileVariants,
+  imageUploaderVariants,
+} from './organisms/ImageUploader';
+export type {
+  ImageUploaderImage,
+  ImageUploaderProps,
+  ImageUploaderStatus,
+} from './organisms/ImageUploader';
+export {
   MarketingFooter,
   marketingFooterLinkVariants,
   marketingFooterVariants,

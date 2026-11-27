@@ -74,6 +74,7 @@ const DASHBOARD_STORIES = [
   'templates-dashboardlayout--default',
   'templates-dashboardlayout--store-loading',
   'templates-dashboardlayout--long-store-name',
+  'organisms-imageuploader--all-variants',
 ] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -1092,6 +1093,7 @@ for (const id of [
   'molecules-select--all-variants',
   'atoms-radiogroup--all-variants',
   'organisms-datatable--with-filters',
+  'organisms-imageuploader--all-variants',
 ]) {
   test(`${id} at a true 360px, without the story padding, has no page horizontal scroll`, async ({
     page,
@@ -1879,3 +1881,42 @@ for (const width of AXE_WIDTHS) {
     });
   }
 }
+test('the image uploader takes files, shows the progress, retries and reorders by drag and keyboard', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openStory(page, 'organisms-imageuploader--simulated-upload', 'scheme:light');
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64'
+  );
+  await page.locator('input[type="file"]').setInputFiles([
+    { name: 'bolo.png', mimeType: 'image/png', buffer: png },
+    { name: 'erro.png', mimeType: 'image/png', buffer: png },
+    { name: 'logo.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') },
+  ]);
+
+  await expect(page.getByRole('alert').filter({ hasText: 'logo.svg' })).toHaveText(
+    'logo.svg: tipo não aceito. Envie JPEG, PNG ou WEBP.'
+  );
+  await expect(page.getByRole('progressbar', { name: 'Enviando imagem 1' })).toBeVisible();
+  const retry = page.getByRole('button', { name: 'Tentar de novo: imagem 2' });
+  await expect(retry).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Imagem 1' })).toBeVisible();
+  await expectNoAxeViolations(page);
+
+  const tiles = page.getByRole('listitem').filter({ has: page.getByRole('img') });
+  await tiles.nth(1).dragTo(tiles.nth(0));
+  await expect(page.getByRole('button', { name: 'Tentar de novo: imagem 1' })).toBeVisible();
+  await expect(tiles.nth(0)).toContainText('Capa');
+
+  const right = page.getByRole('button', { name: 'Mover imagem 1 para a direita' });
+  await right.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('button', { name: 'Tentar de novo: imagem 2' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mover imagem 2 para a esquerda' })).toBeFocused();
+  await expect(page.getByText('Imagem 1 movida para a posição 2 de 2.')).toBeAttached();
+
+  await page.getByRole('button', { name: 'Tentar de novo: imagem 2' }).click();
+  await expect(page.getByRole('progressbar', { name: 'Enviando imagem 2' })).toBeVisible();
+});
