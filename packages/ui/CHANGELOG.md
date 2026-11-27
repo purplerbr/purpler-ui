@@ -1,5 +1,11 @@
 # @purplerbr/ui
 
+## 0.9.0
+
+### Minor Changes
+
+- cea4ca1: Add `AlertDialog` (`@purplerbr/ui/alert-dialog`): a confirmation on Radix AlertDialog that traps the focus, starts on cancel, closes on Esc, ignores clicks outside and returns the focus to the trigger. `AlertDialogAction` and `AlertDialogCancel` take the `Button` `variant` and `size` (use `destructive` for actions that cannot be undone).
+
 ## 0.8.0
 
 ### Minor Changes
