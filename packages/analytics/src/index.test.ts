@@ -114,6 +114,7 @@ describe('createAnalytics', () => {
         send_page_view: false,
         cookie_domain: 'none',
         cookie_flags: 'SameSite=Lax;Secure',
+        cookie_expires: 34_128_000,
         allow_google_signals: false,
         allow_ad_personalization_signals: false,
       },
@@ -299,6 +300,19 @@ describe('createAnalytics', () => {
     expect(scriptSources()).toEqual([]);
     expect(tags().dataLayer).toBeUndefined();
     expect(tags().fbq).toBeUndefined();
+  });
+
+  it('on a visit after a refusal, start deletes the cookies left behind and loads nothing', () => {
+    createAnalytics(OPTIONS).deny();
+    resetPageKeepingStorage();
+    document.cookie = '_ga=GA1.1.1; Path=/';
+    document.cookie = '_fbp=fb.1.1; Domain=.purpler.com.br; Path=/';
+    document.cookie = 'other=1; Path=/';
+
+    createAnalytics(OPTIONS).start();
+
+    expect(document.cookie).toBe('other=1');
+    expect(scriptSources()).toEqual([]);
   });
 
   it('does not reload a page that never ran the tags', () => {

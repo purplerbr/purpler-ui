@@ -1,7 +1,7 @@
 {
   "name": "@purplerbr/analytics",
   "version": "0.0.0",
-  "description": "GA4 e Meta Pixel com consentimento e eventos tipados (sem dependências).",
+  "description": "GA4 e Meta Pixel em modelo opt-out, com eventos tipados (sem dependências).",
   "license": "MIT",
   "type": "module",
   "repository": {

@@ -118,6 +118,8 @@ function startGa4(id: string): void {
     send_page_view: false,
     cookie_domain: 'none',
     cookie_flags: 'SameSite=Lax;Secure',
+    // 13 months, the cookie retention of §12.9 of the root CLAUDE.md.
+    cookie_expires: 34_128_000,
     allow_google_signals: false,
     allow_ad_personalization_signals: false,
   });
@@ -199,8 +201,9 @@ export function createAnalytics({
     isEnabled,
     consent,
     start: () => {
-      if (hasPrivacySignal()) deleteTrackingCookies();
-      if (consent() !== 'denied') load();
+      // A refusal also clears cookies left by an earlier visit or written before GPC was turned on.
+      if (consent() === 'denied') deleteTrackingCookies();
+      else load();
     },
     grant: () => {
       if (!isEnabled() || hasPrivacySignal()) return;
