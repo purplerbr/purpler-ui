@@ -1,0 +1,7 @@
+# @purplerbr/analytics
+
+## 0.1.0
+
+### Minor Changes
+
+- e08331c: New `@purplerbr/analytics` package, with no dependencies: `createAnalytics({ hosts, ga4Id?, metaPixelId? })` runs GA4 and the Meta Pixel only on the given hosts (ADR 0015). `start()` loads the official scripts (`gtag/js` and `fbevents.js`) with the page nonce, unless the visitor refused them or sends Global Privacy Control, and then deletes any tracking cookie left behind; the bootstrap (`dataLayer`, `gtag`, the `fbq` stub) ships in the bundle, with no inline script. GA4 is forced to Consent Mode with the ad signals always denied, no Google Signals, no ad personalization and host-only cookies that last 13 months; the Pixel starts with `autoConfig` off and no Advanced Matching, and never without its ID. `grant()` stores the "Ok" of the notice and `deny()` stores the refusal, revokes both tags, deletes `_ga*`, `_fbp` and `_fbc` on the host and its parent domains and reloads a page that ran them. The choice is versioned in `localStorage`. `track()` takes the single typed event map (`page_view`, `view_item_list`, `select_item`, `generate_lead`, `contact`, `faq_open`) and translates it with `toGa4` and `toPixel`; prices go in integer cents.
