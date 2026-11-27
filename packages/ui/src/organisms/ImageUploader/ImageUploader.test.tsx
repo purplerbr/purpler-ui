@@ -218,6 +218,18 @@ describe('ImageUploader', () => {
     expect(screen.getByRole('button', { name: 'Mover imagem 3 para a esquerda' })).toHaveFocus();
   });
 
+  it('moves left with the keyboard and keeps the focus on the left button', async () => {
+    const user = userEvent.setup();
+    render(<Reorderable />);
+
+    screen.getByRole('button', { name: 'Mover imagem 3 para a esquerda' }).focus();
+    await user.keyboard('{Enter}');
+
+    expect(tiles().map((tile) => tile.dataset.imageId)).toEqual(['a', 'c', 'b']);
+    expect(screen.getByText('Imagem 3 movida para a posição 2 de 3.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mover imagem 2 para a esquerda' })).toHaveFocus();
+  });
+
   it('removes an image, announces it and moves the focus to the drop zone', async () => {
     const user = userEvent.setup();
     const onRemove = vi.fn();
@@ -261,6 +273,33 @@ describe('ImageUploader', () => {
 
     expect(first).toHaveAttribute('data-drop-target', 'false');
     expect(onReorder).not.toHaveBeenCalled();
+  });
+
+  it('takes files dropped on a tile, since the drop zone is the whole uploader', () => {
+    const { onFilesSelected, onReorder } = setup();
+    const [first] = tiles();
+    if (first === undefined) throw new Error('tiles not rendered');
+    const photo = file('bolo.webp', 'image/webp');
+
+    fireEvent.dragOver(first, { dataTransfer: { types: ['Files'] } });
+    fireEvent.drop(first, { dataTransfer: { types: ['Files'], files: [photo] } });
+
+    expect(first).toHaveAttribute('data-drop-target', 'false');
+    expect(onFilesSelected).toHaveBeenCalledWith([photo]);
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when a tile is dropped back on itself', () => {
+    const { onReorder } = setup();
+    const [first] = tiles();
+    if (first === undefined) throw new Error('tiles not rendered');
+    const dataTransfer = { setData: vi.fn(), types: ['text/plain'], effectAllowed: 'all' };
+
+    fireEvent.dragStart(first, { dataTransfer });
+    fireEvent.drop(first, { dataTransfer });
+
+    expect(onReorder).not.toHaveBeenCalled();
+    expect(screen.queryByText(/movida para a posição/)).not.toBeInTheDocument();
   });
 
   it('has no accessibility violations, empty and with every status', async () => {
