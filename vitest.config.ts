@@ -33,6 +33,15 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'analytics',
+          environment: 'jsdom',
+          environmentOptions: { jsdom: { url: 'https://purpler.com.br/' } },
+          include: ['packages/analytics/src/**/*.test.ts'],
+          restoreMocks: true,
+        },
+      },
+      {
+        test: {
           name: 'repo',
           environment: 'node',
           include: ['tests/repo/**/*.test.ts'],

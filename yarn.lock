@@ -1912,6 +1912,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@purplerbr/analytics@workspace:packages/analytics":
+  version: 0.0.0-use.local
+  resolution: "@purplerbr/analytics@workspace:packages/analytics"
+  dependencies:
+    tsup: "npm:^9.0.0"
+    typescript: "npm:~6.0.3"
+    vitest: "npm:~4.1.12"
+  languageName: unknown
+  linkType: soft
+
 "@purplerbr/tokens@workspace:*, @purplerbr/tokens@workspace:packages/tokens":
   version: 0.0.0-use.local
   resolution: "@purplerbr/tokens@workspace:packages/tokens"

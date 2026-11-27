@@ -1,0 +1,35 @@
+{
+  "name": "@purplerbr/analytics",
+  "version": "0.0.0",
+  "description": "GA4 e Meta Pixel em modelo opt-out, com eventos tipados (sem dependências).",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/purplerbr/purpler-ui.git",
+    "directory": "packages/analytics"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "tsup": "^9.0.0",
+    "typescript": "~6.0.3",
+    "vitest": "~4.1.12"
+  }
+}
