@@ -108,6 +108,13 @@ export type { SheetContentProps, SheetContentVariants, SheetProps } from './mole
 export { Toaster, toast, toastButtonVariants, toastVariants } from './molecules/Toaster';
 export type { ToasterProps } from './molecules/Toaster';
 export {
+  CONSENT_BANNER_HEIGHT,
+  ConsentBanner,
+  consentBannerLinkVariants,
+  consentBannerVariants,
+} from './organisms/ConsentBanner';
+export type { ConsentBannerProps } from './organisms/ConsentBanner';
+export {
   DataTable,
   DEFAULT_LIMITS,
   dataTableCellVariants,

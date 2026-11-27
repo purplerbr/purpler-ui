@@ -58,6 +58,26 @@ describe('MarketingFooter', () => {
     expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();
   });
 
+  it('renders the action after the links, in the same nav', () => {
+    render(
+      <MarketingFooter
+        homeHref="/"
+        links={LINKS}
+        action={<button type="button">Gerenciar cookies</button>}
+      />
+    );
+    const items = within(screen.getByRole('navigation', { name: 'Rodapé' })).getAllByRole(
+      'listitem'
+    );
+
+    expect(items.map((item) => item.textContent)).toEqual([
+      'Termos de uso',
+      'Política de privacidade',
+      'Gerenciar cookies',
+    ]);
+    expect(within(items[2] as HTMLElement).getByRole('button')).toBeVisible();
+  });
+
   it('has no accessibility violations', async () => {
     const { container } = render(<Footer />);
 

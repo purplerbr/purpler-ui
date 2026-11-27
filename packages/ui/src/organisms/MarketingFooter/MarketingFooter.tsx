@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Logo } from '../../atoms/Logo/Logo';
 import { cn } from '../../utils/cn';
 import type { MarketingLink } from '../MarketingHeader/MarketingHeader';
@@ -8,6 +8,8 @@ export type MarketingFooterProps = ComponentProps<'footer'> & {
   homeHref: string;
   /** Legal and secondary links, such as the terms and the privacy policy. */
   links: readonly MarketingLink[];
+  /** Rendered after the links, such as a "Gerenciar cookies" button. */
+  action?: ReactNode;
   /** Short line under the logo. */
   tagline?: string;
   /** Contact e-mail, shown as a `mailto:` link after its label. */
@@ -24,6 +26,7 @@ export function MarketingFooter({
   className,
   homeHref,
   links,
+  action,
   tagline,
   contact,
   note,
@@ -61,6 +64,7 @@ export function MarketingFooter({
                   </a>
                 </li>
               ))}
+              {action ? <li>{action}</li> : null}
             </ul>
           </nav>
           {contact ? (

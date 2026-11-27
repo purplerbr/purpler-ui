@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MarketingFooter } from './MarketingFooter';
+import { marketingFooterLinkVariants } from './MarketingFooter.variants';
 
 const LINKS = [
   { href: '#planos', label: 'Planos' },
@@ -24,6 +25,10 @@ const meta = {
     tagline: { control: 'text', description: 'Frase curta embaixo do logo' },
     contact: { control: 'object', description: 'Rótulo e e-mail de contato (vira `mailto:`)' },
     note: { control: 'text', description: 'Última linha, como o copyright' },
+    action: {
+      control: false,
+      description: 'Item depois dos links, como o botão "Gerenciar cookies"',
+    },
   },
   parameters: {
     layout: 'fullscreen',
@@ -43,6 +48,16 @@ export const Default: Story = {};
 
 export const Minimal: Story = {
   render: ({ homeHref, links }) => <MarketingFooter homeHref={homeHref} links={links} />,
+};
+
+export const WithAction: Story = {
+  args: {
+    action: (
+      <button type="button" className={marketingFooterLinkVariants()}>
+        Gerenciar cookies
+      </button>
+    ),
+  },
 };
 
 export const AllVariants: Story = {
