@@ -94,6 +94,13 @@ export {
 } from './molecules/FormField';
 export type { FormFieldProps } from './molecules/FormField';
 export {
+  Select,
+  selectContentVariants,
+  selectItemVariants,
+  selectTriggerVariants,
+} from './molecules/Select';
+export type { SelectOption, SelectProps } from './molecules/Select';
+export {
   Sheet,
   SheetClose,
   SheetContent,

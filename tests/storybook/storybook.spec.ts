@@ -25,6 +25,7 @@ const FORM_STORIES = [
   'atoms-label--all-variants',
   'atoms-radiogroup--all-variants',
   'molecules-formfield--all-variants',
+  'molecules-select--all-variants',
   'molecules-alert--all-variants',
   'atoms-badge--all-variants',
 ] as const;
@@ -1088,6 +1089,7 @@ for (const id of [
   'organisms-pricingtable--default',
   'organisms-pricingcard--all-variants',
   'molecules-formfield--all-variants',
+  'molecules-select--all-variants',
   'atoms-radiogroup--all-variants',
   'organisms-datatable--with-filters',
 ]) {
