@@ -1,5 +1,8 @@
 import { cva } from 'class-variance-authority';
 
+/** CSS variable on `:root` with the open banner's height, read by styles.css and FloatingContactLink. */
+export const CONSENT_BANNER_HEIGHT = '--consent-banner-height';
+
 // z-40 like FloatingContactLink: later in the DOM, it covers the link; an open Sheet (z-50) covers it.
 export const consentBannerVariants = cva([
   'fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background font-sans text-foreground shadow-lg',

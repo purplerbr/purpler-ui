@@ -52,6 +52,8 @@ const LANDING_STORIES = [
   'organisms-marketingfooter--with-action',
   'organisms-consentbanner--default',
   'organisms-consentbanner--reopened',
+  'organisms-consentbanner--all-variants',
+  'organisms-consentbanner--on-marketing-page',
   'organisms-pricingcard--all-variants',
   'organisms-pricingtable--all-variants',
   'templates-marketinglayout--default',
@@ -1729,3 +1731,71 @@ for (const width of [360, 768, 1280]) {
     await expect.poll(() => storeNameReadings(page)).toBe(1);
   });
 }
+
+// Same weight (ADR 0015): the two buttons must look the same, read from the rendered styles.
+test('ConsentBanner gives OK and Recusar the same computed style and size', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openStory(page, 'organisms-consentbanner--on-marketing-page', 'scheme:light');
+  const looks = await page
+    .getByRole('region', { name: 'Cookies e privacidade' })
+    .getByRole('button')
+    .evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const style = getComputedStyle(button);
+        const { width, height } = button.getBoundingClientRect();
+        return [
+          style.backgroundColor,
+          style.color,
+          style.fontSize,
+          style.fontWeight,
+          style.borderRadius,
+          style.borderWidth,
+          style.padding,
+          Math.round(width),
+          Math.round(height),
+        ].join(' | ');
+      })
+    );
+
+  expect(looks).toHaveLength(2);
+  expect(looks[0]).toBe(looks[1]);
+});
+
+// WCAG 2.4.11: the open banner hides neither the focus, the page end nor the floating link.
+test('an open ConsentBanner keeps the focus, the page end and the floating link above it', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await openStory(page, 'organisms-consentbanner--on-marketing-page', 'scheme:light');
+  const banner = page.getByRole('region', { name: 'Cookies e privacidade' });
+  const top = async () => (await banner.boundingBox())?.y ?? 0;
+  const bannerHeight = Math.ceil((await banner.boundingBox())?.height ?? 0);
+
+  expect(bannerHeight).toBeGreaterThan(0);
+  expect(
+    await page.evaluate(() => ({
+      variable: document.documentElement.style.getPropertyValue('--consent-banner-height'),
+      scrollPadding: getComputedStyle(document.documentElement).scrollPaddingBottom,
+      pageEnd: getComputedStyle(document.body, '::after').height,
+    }))
+  ).toEqual({
+    variable: `${String(bannerHeight)}px`,
+    scrollPadding: `${String(bannerHeight)}px`,
+    pageEnd: `${String(bannerHeight)}px`,
+  });
+
+  const floating = page.getByRole('link', { name: /WhatsApp/ });
+  const floatingBox = await floating.boundingBox();
+  expect((floatingBox?.y ?? 0) + (floatingBox?.height ?? 0)).toBeLessThanOrEqual(await top());
+
+  const lastLink = page.getByRole('contentinfo').getByRole('link').last();
+  await lastLink.focus();
+  const focused = await lastLink.boundingBox();
+  expect((focused?.y ?? 0) + (focused?.height ?? 0)).toBeLessThanOrEqual(await top());
+
+  await page.evaluate(() => {
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  });
+  const note = await page.getByText('© 2026 Purpler').boundingBox();
+  expect((note?.y ?? 0) + (note?.height ?? 0)).toBeLessThanOrEqual(await top());
+});

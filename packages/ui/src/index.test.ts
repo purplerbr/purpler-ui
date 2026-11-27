@@ -23,6 +23,7 @@ describe('@purplerbr/ui public API', () => {
       'AuthLayout',
       'Badge',
       'Button',
+      'CONSENT_BANNER_HEIGHT',
       'Card',
       'CardContent',
       'CardDescription',

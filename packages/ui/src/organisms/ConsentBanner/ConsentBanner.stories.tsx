@@ -1,5 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
+import { MessageCircle } from 'lucide-react';
+import { FloatingContactLink } from '../../atoms/FloatingContactLink/FloatingContactLink';
+import { Heading } from '../../atoms/Heading/Heading';
+import { Text } from '../../atoms/Text/Text';
+import { MarketingLayout } from '../../templates/MarketingLayout/MarketingLayout';
+import { MarketingFooter } from '../MarketingFooter/MarketingFooter';
+import { MarketingHeader } from '../MarketingHeader/MarketingHeader';
 import { ConsentBanner } from './ConsentBanner';
 
 const meta = {
@@ -38,19 +45,84 @@ const meta = {
       },
     },
   },
-  decorators: [
-    // translate-x-0 makes this box the containing block, so the fixed banner stays inside its story.
-    (Story) => (
-      <div className="min-h-96 translate-x-0">
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta<typeof ConsentBanner>;
+
+// translate-x-0 makes this box the containing block, so the fixed banner stays inside its story.
+const inBox: Decorator = (Story) => (
+  <div className="min-h-96 translate-x-0">
+    <Story />
+  </div>
+);
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = { decorators: [inBox] };
 
-export const Reopened: Story = { args: { focusOnMount: true } };
+export const Reopened: Story = { args: { focusOnMount: true }, decorators: [inBox] };
+
+// Each banner in its own box: translate-x-0 makes the box the containing block of the fixed banner.
+export const AllVariants: Story = {
+  parameters: { controls: { disable: true } },
+  render: (args) => (
+    <div className="grid gap-6">
+      {[
+        { label: 'Rótulos padrão', props: {} },
+        { label: 'OK e Recusar', props: { acceptLabel: 'OK' } },
+        {
+          label: 'Reaberto pelo rodapé (foco no título)',
+          props: { acceptLabel: 'OK', focusOnMount: true },
+        },
+      ].map(({ label, props }) => (
+        <section key={label} aria-label={label} className="grid gap-2">
+          <Text size="small" tone="muted" className="px-4">
+            {label}
+          </Text>
+          <div className="relative min-h-56 translate-x-0">
+            <ConsentBanner {...args} {...props} />
+          </div>
+        </section>
+      ))}
+    </div>
+  ),
+};
+
+// The whole page at 360 px: the open banner pushes the page end and the floating link above itself.
+export const OnMarketingPage: Story = {
+  args: { acceptLabel: 'OK' },
+  render: (args) => (
+    <MarketingLayout
+      header={
+        <>
+          <ConsentBanner {...args} />
+          <MarketingHeader
+            homeHref="#"
+            links={[{ href: '#planos', label: 'Planos' }]}
+            cta={{ href: '#entrar', label: 'Entrar' }}
+          />
+        </>
+      }
+      footer={
+        <MarketingFooter
+          homeHref="#"
+          links={[
+            { href: '#termos', label: 'Termos de uso' },
+            { href: '#privacidade', label: 'Política de privacidade' },
+          ]}
+          contact={{ label: 'Fale com a gente:', email: 'contato@purpler.com.br' }}
+          note="© 2026 Purpler"
+        />
+      }
+    >
+      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-12 md:px-6">
+        <Heading level={1} size="display">
+          Sua loja online com a sua marca
+        </Heading>
+        <Text size="body-lg" tone="muted">
+          Venda produtos físicos, digitais e cursos com as suas contas de pagamento.
+        </Text>
+      </div>
+      <FloatingContactLink href="#whatsapp" label="WhatsApp" icon={<MessageCircle />} />
+    </MarketingLayout>
+  ),
+};

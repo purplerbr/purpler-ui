@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { ConsentBanner } from './ConsentBanner';
+import { CONSENT_BANNER_HEIGHT } from './ConsentBanner.variants';
 
 const DESCRIPTION = 'Usamos cookies do Google e da Meta, nos EUA, para medir visitas.';
 
@@ -50,14 +51,6 @@ describe('ConsentBanner', () => {
     expect(onReject).toHaveBeenCalledTimes(1);
   });
 
-  it('gives accept and reject the same weight', () => {
-    setup();
-
-    expect(screen.getByRole('button', { name: 'Aceitar' }).className).toBe(
-      screen.getByRole('button', { name: 'Recusar' }).className
-    );
-  });
-
   it('keeps the focus where it was unless asked to take it', () => {
     setup();
 
@@ -88,6 +81,51 @@ describe('ConsentBanner', () => {
     expect(screen.getByRole('link', { name: 'Saiba mais' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Permitir' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Não permitir' })).toBeInTheDocument();
+  });
+
+  it('publishes its height on :root while open, follows resizes and clears it on close', () => {
+    let resized: () => void = () => undefined;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          resized = callback;
+        }
+        observe = observe;
+        disconnect = disconnect;
+      }
+    );
+    const height = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(180.4);
+    const root = document.documentElement.style;
+
+    const { unmount } = render(
+      <ConsentBanner description="Texto." privacyHref="/p" onAccept={vi.fn()} onReject={vi.fn()} />
+    );
+    expect(root.getPropertyValue(CONSENT_BANNER_HEIGHT)).toBe('181px');
+    expect(observe).toHaveBeenCalledWith(screen.getByRole('region'));
+
+    height.mockReturnValue(96);
+    act(() => {
+      resized();
+    });
+    expect(root.getPropertyValue(CONSENT_BANNER_HEIGHT)).toBe('96px');
+
+    unmount();
+    expect(root.getPropertyValue(CONSENT_BANNER_HEIGHT)).toBe('');
+    expect(disconnect).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('still publishes its height once where ResizeObserver does not exist', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(120);
+
+    render(
+      <ConsentBanner description="Texto." privacyHref="/p" onAccept={vi.fn()} onReject={vi.fn()} />
+    );
+
+    expect(document.documentElement.style.getPropertyValue(CONSENT_BANNER_HEIGHT)).toBe('120px');
   });
 
   it('has no accessibility violations', async () => {
