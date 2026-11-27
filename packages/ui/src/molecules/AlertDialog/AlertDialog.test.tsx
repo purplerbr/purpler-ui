@@ -1,5 +1,6 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import {
@@ -27,6 +28,35 @@ function Example({ onConfirm }: { onConfirm?: () => void }) {
           <AlertDialogCancel>Manter assinatura</AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={onConfirm}>
             Cancelar assinatura
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function AsyncExample({ onConfirm }: { onConfirm: () => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger>Excluir produto</AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir o produto?</AlertDialogTitle>
+          <AlertDialogDescription>Ele sai da loja.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Voltar</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            onClick={(event) => {
+              event.preventDefault();
+              void onConfirm().then(() => {
+                setOpen(false);
+              });
+            }}
+          >
+            Excluir
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -113,6 +143,22 @@ describe('AlertDialog', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(trigger()).toHaveFocus();
+  });
+
+  it('stays open while a controlled async action runs and closes when it resolves', async () => {
+    const user = userEvent.setup();
+    let resolve: () => void = () => {};
+    const onConfirm = vi.fn(() => new Promise<void>((done) => (resolve = done)));
+    render(<AsyncExample onConfirm={onConfirm} />);
+
+    await user.click(screen.getByRole('button', { name: 'Excluir produto' }));
+    await user.click(screen.getByRole('button', { name: 'Excluir' }));
+
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alertdialog', { name: 'Excluir o produto?' })).toBeInTheDocument();
+    resolve();
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Excluir produto' })).toHaveFocus();
   });
 
   it('has no accessibility violations while open', async () => {
