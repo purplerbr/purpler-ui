@@ -201,6 +201,8 @@ export function createAnalytics({
     isEnabled,
     consent,
     start: () => {
+      // Off the hosts nothing is written nor deleted: the cookies there belong to another app.
+      if (!isEnabled()) return;
       // A refusal also clears cookies left by an earlier visit or written before GPC was turned on.
       if (consent() === 'denied') deleteTrackingCookies();
       else load();

@@ -6,9 +6,9 @@ import { ROOT, isRecord, read, readJson } from './helpers';
 
 // The tokens package also ships the OFL fonts, so its SPDX expression names both licenses.
 const PUBLIC_PACKAGES = [
-  { dir: 'packages/tokens', name: '@purplerbr/tokens', license: 'MIT AND OFL-1.1' },
-  { dir: 'packages/ui', name: '@purplerbr/ui', license: 'MIT' },
-  { dir: 'packages/analytics', name: '@purplerbr/analytics', license: 'MIT' },
+  { dir: 'packages/tokens', name: '@purplerbr/tokens', license: 'MIT AND OFL-1.1', css: true },
+  { dir: 'packages/ui', name: '@purplerbr/ui', license: 'MIT', css: true },
+  { dir: 'packages/analytics', name: '@purplerbr/analytics', license: 'MIT', css: false },
 ] as const;
 
 function manifestOf(dir: string): Record<string, unknown> {
@@ -17,7 +17,7 @@ function manifestOf(dir: string): Record<string, unknown> {
   return manifest;
 }
 
-describe.each(PUBLIC_PACKAGES)('$name', ({ dir, name, license }) => {
+describe.each(PUBLIC_PACKAGES)('$name', ({ dir, name, license, css }) => {
   const manifest = manifestOf(dir);
 
   it('publishes only dist/ to GitHub Packages, under its SPDX license', () => {
@@ -26,7 +26,8 @@ describe.each(PUBLIC_PACKAGES)('$name', ({ dir, name, license }) => {
       license,
       type: 'module',
       files: ['dist'],
-      sideEffects: ['**/*.css'],
+      // Only the CSS files have side effects; a package without CSS has none.
+      sideEffects: css ? ['**/*.css'] : false,
       publishConfig: { registry: 'https://npm.pkg.github.com' },
       repository: {
         type: 'git',

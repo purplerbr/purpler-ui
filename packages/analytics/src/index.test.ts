@@ -242,6 +242,16 @@ describe('createAnalytics', () => {
       Reflect.deleteProperty(navigator, 'globalPrivacyControl');
     });
 
+    // The host lock covers writes too: off the hosts, even GPC must not touch another app's cookies.
+    it('off its hosts, leaves the cookies of the page alone', () => {
+      resetPage('https://minhaloja.purpler.com.br/');
+      document.cookie = '_ga=GA1.1.store; Path=/';
+
+      createAnalytics({ hosts: ['purpler.com.br'], ga4Id: 'G-TEST123' }).start();
+
+      expect(document.cookie).toBe('_ga=GA1.1.store');
+    });
+
     it('treats the visit as refused: nothing loads, no cookie is written and Ok cannot override it', () => {
       document.cookie = '_ga=GA1.1.1; Path=/';
       const analytics = createAnalytics(OPTIONS);
@@ -300,6 +310,19 @@ describe('createAnalytics', () => {
     expect(scriptSources()).toEqual([]);
     expect(tags().dataLayer).toBeUndefined();
     expect(tags().fbq).toBeUndefined();
+  });
+
+  it('off its hosts, a refusal stored by another app is left alone with its cookies', () => {
+    resetPage('https://app.purpler.com.br/');
+    localStorage.setItem(
+      DEFAULT_STORAGE_KEY,
+      JSON.stringify({ version: CONSENT_VERSION, choice: 'denied' })
+    );
+    document.cookie = '_fbp=fb.1.1; Path=/';
+
+    createAnalytics(OPTIONS).start();
+
+    expect(document.cookie).toBe('_fbp=fb.1.1');
   });
 
   it('on a visit after a refusal, start deletes the cookies left behind and loads nothing', () => {
