@@ -609,6 +609,58 @@ for (const width of AXE_WIDTHS) {
   }
 }
 
+test('the alert dialog opens with the keyboard on cancel, keeps Tab inside, ignores clicks outside and returns the focus', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'molecules-alertdialog--default', 'scheme:light');
+  const trigger = page.getByRole('button', { name: 'Cancelar assinatura' });
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('alertdialog', { name: 'Cancelar a assinatura?' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Manter assinatura' })).toBeFocused();
+  for (let step = 0; step < 4; step += 1) {
+    await page.keyboard.press(tabKey(browserName));
+    expect(await focusedInside(page, '[role="alertdialog"]')).toBe(true);
+  }
+  await page.mouse.click(5, 5);
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+for (const width of [360, 768, 1280]) {
+  for (const scheme of SCHEMES) {
+    for (const variant of ['destructive', 'primary']) {
+      test(`the open ${variant} alert dialog in ${scheme} at ${String(width)}px fits the page with no WCAG violations`, async ({
+        page,
+      }, info) => {
+        await page.setViewportSize({ width, height: 800 });
+        await openStory(
+          page,
+          'molecules-alertdialog--open',
+          `scheme:${scheme}&args=variant:${variant}`
+        );
+
+        await expect(page.getByRole('alertdialog')).toBeVisible();
+        await expectNoAxeViolations(page, true);
+        const box = await page.getByRole('alertdialog').boundingBox();
+        expect(box && box.x >= 0 && box.x + box.width <= width).toBe(true);
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+        ).toBeLessThanOrEqual(0);
+        await page.screenshot({
+          path: `test-results/screens/${info.project.name}/${String(width)}/${scheme}/alertdialog-open-${variant}.png`,
+        });
+      });
+    }
+  }
+}
+
 test('the header skip link shows on the first Tab and moves the focus to the main content', async ({
   page,
   browserName,
