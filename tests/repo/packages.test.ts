@@ -8,6 +8,7 @@ import { ROOT, isRecord, read, readJson } from './helpers';
 const PUBLIC_PACKAGES = [
   { dir: 'packages/tokens', name: '@purplerbr/tokens', license: 'MIT AND OFL-1.1' },
   { dir: 'packages/ui', name: '@purplerbr/ui', license: 'MIT' },
+  { dir: 'packages/analytics', name: '@purplerbr/analytics', license: 'MIT' },
 ] as const;
 
 function manifestOf(dir: string): Record<string, unknown> {
@@ -48,6 +49,19 @@ describe('@purplerbr/tokens', () => {
 
     expect(manifest).not.toHaveProperty('dependencies');
     expect(manifest).not.toHaveProperty('peerDependencies');
+  });
+});
+
+describe('@purplerbr/analytics', () => {
+  it('has zero runtime dependencies and one entry point', () => {
+    const manifest = manifestOf('packages/analytics');
+
+    expect(manifest).not.toHaveProperty('dependencies');
+    expect(manifest).not.toHaveProperty('peerDependencies');
+    expect(manifest.exports).toEqual({
+      '.': { types: './dist/index.d.ts', import: './dist/index.js' },
+      './package.json': './package.json',
+    });
   });
 });
 
@@ -109,6 +123,7 @@ describe('yarn.lock', () => {
     );
 
     expect(resolutions.sort()).toEqual([
+      '@purplerbr/analytics@workspace:packages/analytics',
       '@purplerbr/tokens@workspace:packages/tokens',
       '@purplerbr/ui@workspace:packages/ui',
     ]);

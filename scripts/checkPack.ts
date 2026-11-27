@@ -14,7 +14,7 @@ export interface Output {
   error(message: string): void;
 }
 
-export const PUBLIC_WORKSPACES = ['packages/tokens', 'packages/ui'] as const;
+export const PUBLIC_WORKSPACES = ['packages/tokens', 'packages/ui', 'packages/analytics'] as const;
 
 const ROOT = new URL('../', import.meta.url);
 // Inside the repo and ignored by git, so the check writes nothing outside it (CLAUDE.md R23).

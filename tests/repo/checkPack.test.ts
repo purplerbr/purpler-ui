@@ -129,6 +129,7 @@ describe('checkPackages', () => {
     expect(lines).toEqual([
       'log @purplerbr/tokens@0.1.0: 2 files\n',
       'log @purplerbr/ui@0.1.0: 2 files\n',
+      'log @purplerbr/analytics@0.1.0: 2 files\n',
     ]);
   });
 

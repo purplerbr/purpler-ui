@@ -20,7 +20,7 @@ const withOf = (steps: Record<string, unknown>[], action: string): unknown =>
   steps.find((step) => actionOf(step) === action)?.with;
 
 describe('release artifact', () => {
-  it.each(['packages/tokens', 'packages/ui'])(
+  it.each(['packages/tokens', 'packages/ui', 'packages/analytics'])(
     '%s has no lifecycle script that could rebuild it while publishing',
     (dir) => {
       const manifest = readJson(`${dir}/package.json`);
@@ -30,10 +30,10 @@ describe('release artifact', () => {
     }
   );
 
-  it('uploads exactly the two dist/ folders checked in the package job', () => {
+  it('uploads exactly the dist/ folders checked in the package job', () => {
     expect(withOf(stepsOf('package'), 'actions/upload-artifact')).toEqual({
       name: 'packages-dist',
-      path: 'packages/tokens/dist\npackages/ui/dist\n',
+      path: 'packages/tokens/dist\npackages/ui/dist\npackages/analytics/dist\n',
       'if-no-files-found': 'error',
       'retention-days': 1,
     });
