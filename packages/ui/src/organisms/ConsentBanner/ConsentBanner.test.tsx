@@ -51,6 +51,15 @@ describe('ConsentBanner', () => {
     expect(onReject).toHaveBeenCalledTimes(1);
   });
 
+  // The Storybook check of the computed style runs only locally; this one runs in CI.
+  it('gives accept and reject the same weight', () => {
+    setup();
+
+    expect(screen.getByRole('button', { name: 'Aceitar' }).className).toBe(
+      screen.getByRole('button', { name: 'Recusar' }).className
+    );
+  });
+
   it('keeps the focus where it was unless asked to take it', () => {
     setup();
 
