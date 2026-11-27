@@ -1,5 +1,11 @@
 # @purplerbr/ui
 
+## 0.10.0
+
+### Minor Changes
+
+- 0516540: `AlertDialogAction` takes `loading`: it passes it to the `Button` (spinner, `aria-busy` and `aria-disabled`, focus kept) and, while loading, a click or Enter neither runs `onClick` nor closes the dialog.
+
 ## 0.9.0
 
 ### Minor Changes
