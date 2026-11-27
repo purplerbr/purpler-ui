@@ -1,12 +1,12 @@
 import { AlertDialog as AlertDialogPrimitive } from 'radix-ui';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, MouseEvent } from 'react';
 import { Button, type ButtonProps } from '../../atoms/Button/Button';
 import { cn } from '../../utils/cn';
 import { alertDialogContentVariants, alertDialogOverlayVariants } from './AlertDialog.variants';
 
 export type AlertDialogProps = ComponentProps<typeof AlertDialogPrimitive.Root>;
 export type AlertDialogActionProps = ComponentProps<typeof AlertDialogPrimitive.Action> &
-  Pick<ButtonProps, 'variant' | 'size'>;
+  Pick<ButtonProps, 'variant' | 'size' | 'loading'>;
 export type AlertDialogCancelProps = ComponentProps<typeof AlertDialogPrimitive.Cancel> &
   Pick<ButtonProps, 'variant' | 'size'>;
 
@@ -84,11 +84,27 @@ export function AlertDialogDescription({
   );
 }
 
+// Radix closes after the child's onClick unless it calls preventDefault.
+const keepOpen = (event: MouseEvent<HTMLButtonElement>): void => {
+  event.preventDefault();
+};
+
 /** Confirms and closes; use `variant="destructive"` when the action cannot be undone. */
-export function AlertDialogAction({ className, variant, size, ...props }: AlertDialogActionProps) {
+export function AlertDialogAction({
+  className,
+  variant,
+  size,
+  loading = false,
+  onClick,
+  ...props
+}: AlertDialogActionProps) {
   return (
-    <Button variant={variant} size={size} className={className} asChild>
-      <AlertDialogPrimitive.Action data-slot="alert-dialog-action" {...props} />
+    <Button variant={variant} size={size} loading={loading} className={className} asChild>
+      <AlertDialogPrimitive.Action
+        data-slot="alert-dialog-action"
+        {...props}
+        onClick={loading ? keepOpen : onClick}
+      />
     </Button>
   );
 }

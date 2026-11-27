@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from './AlertDialog';
 
-function Example({ onConfirm }: { onConfirm?: () => void }) {
+function Example({ onConfirm, loading = false }: { onConfirm?: () => void; loading?: boolean }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger>Cancelar assinatura</AlertDialogTrigger>
@@ -27,7 +27,7 @@ function Example({ onConfirm }: { onConfirm?: () => void }) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Manter assinatura</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={onConfirm}>
+          <AlertDialogAction variant="destructive" loading={loading} onClick={onConfirm}>
             Cancelar assinatura
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -162,6 +162,26 @@ describe('AlertDialog', () => {
     expect(screen.getByRole('button', { name: 'Excluir produto' })).toHaveFocus();
   });
 
+  it('while loading, the action keeps the focus, is marked busy and neither confirms nor closes', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    render(<Example loading onConfirm={onConfirm} />);
+
+    await user.click(trigger());
+    const action = within(screen.getByRole('alertdialog')).getByRole('button', {
+      name: 'Cancelar assinatura',
+    });
+    await user.click(action);
+    await user.keyboard('{Enter}');
+    await user.keyboard(' ');
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(action).toHaveFocus();
+    expect(action).toHaveAttribute('aria-busy', 'true');
+    expect(action).toHaveAttribute('aria-disabled', 'true');
+  });
+
   it('styles the action and the cancel as the Button variant they take, cancel as outline by default', async () => {
     const user = userEvent.setup();
     render(
@@ -183,12 +203,15 @@ describe('AlertDialog', () => {
     );
   });
 
-  it('has no accessibility violations while open', async () => {
-    const user = userEvent.setup();
-    render(<Example />);
+  it.each([false, true])(
+    'has no accessibility violations while open (loading: %s)',
+    async (loading) => {
+      const user = userEvent.setup();
+      render(<Example loading={loading} />);
 
-    await user.click(trigger());
+      await user.click(trigger());
 
-    expect(await axe(document.body)).toHaveNoViolations();
-  });
+      expect(await axe(document.body)).toHaveNoViolations();
+    }
+  );
 });
