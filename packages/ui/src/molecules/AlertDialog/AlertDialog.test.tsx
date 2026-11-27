@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
+import { Button } from '../../atoms/Button/Button';
 import { describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import {
@@ -159,6 +160,27 @@ describe('AlertDialog', () => {
     resolve();
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     expect(screen.getByRole('button', { name: 'Excluir produto' })).toHaveFocus();
+  });
+
+  it('styles the action and the cancel as the Button variant they take, cancel as outline by default', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Example />
+        <Button variant="destructive">Referência destrutiva</Button>
+        <Button variant="outline">Referência contorno</Button>
+      </>
+    );
+
+    await user.click(trigger());
+    const dialog = within(screen.getByRole('alertdialog'));
+
+    expect(dialog.getByRole('button', { name: 'Cancelar assinatura' }).className).toBe(
+      screen.getByRole('button', { name: 'Referência destrutiva', hidden: true }).className
+    );
+    expect(dialog.getByRole('button', { name: 'Manter assinatura' }).className).toBe(
+      screen.getByRole('button', { name: 'Referência contorno', hidden: true }).className
+    );
   });
 
   it('has no accessibility violations while open', async () => {
