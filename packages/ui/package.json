@@ -108,6 +108,10 @@
       "types": "./dist/molecules/Toaster/index.d.ts",
       "import": "./dist/molecules/Toaster/index.js"
     },
+    "./consent-banner": {
+      "types": "./dist/organisms/ConsentBanner/index.d.ts",
+      "import": "./dist/organisms/ConsentBanner/index.js"
+    },
     "./data-table": {
       "types": "./dist/organisms/DataTable/index.d.ts",
       "import": "./dist/organisms/DataTable/index.js"
