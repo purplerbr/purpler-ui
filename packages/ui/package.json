@@ -147,7 +147,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "NODE_OPTIONS=--max-old-space-size=6144 tsup",
     "typecheck": "tsc -p tsconfig.json",
     "exports:sync": "node scripts/exports.ts --write",
     "storybook": "yarn workspace @purplerbr/tokens build && storybook dev --port 6006 --host 127.0.0.1 --no-open",
