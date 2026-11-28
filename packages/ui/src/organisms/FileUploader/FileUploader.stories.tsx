@@ -41,6 +41,21 @@ const VIDEOS: FileUploaderItem[] = [
     status: 'error',
     error: 'Não conseguimos verificar o vídeo. Envie de novo.',
   },
+  {
+    id: 'v5',
+    name: 'aula-05-decoracao.mp4',
+    sizeBytes: 240 * MB,
+    status: 'processing',
+    processingLabel: 'Convertendo…',
+  },
+  {
+    id: 'v6',
+    name: 'aula-06-embalagem.mp4',
+    sizeBytes: 198 * MB,
+    status: 'error',
+    error: 'A conversão deste vídeo falhou. Remova e envie o arquivo de novo.',
+    retryable: false,
+  },
 ];
 
 const meta = {
@@ -61,7 +76,11 @@ const meta = {
     onRetry: fn(),
   },
   argTypes: {
-    items: { control: 'object', description: 'Arquivos na ordem de exibição' },
+    items: {
+      control: 'object',
+      description:
+        'Arquivos na ordem de exibição; por item, `processingLabel` troca o “Verificando…” e `retryable: false` esconde o “Tentar de novo”',
+    },
     accept: { control: 'text', description: 'Tipos aceitos, na sintaxe do `<input accept>`' },
     maxSize: { control: 'number', description: 'Tamanho máximo de cada arquivo, em bytes' },
     maxFiles: { control: 'number', description: 'Quantidade máxima de arquivos' },

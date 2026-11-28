@@ -230,6 +230,56 @@ describe('FileUploader', () => {
     expect(onRetry).toHaveBeenCalledWith('c');
   });
 
+  it('shows a custom processing label and announces it with the file name', () => {
+    const converting: FileUploaderItem = {
+      id: 'a',
+      name: 'aula-1.mp4',
+      sizeBytes: MB,
+      status: 'processing',
+      processingLabel: 'Convertendo…',
+    };
+    const { rerender } = setup({ items: [{ ...converting, status: 'uploading' }] });
+
+    rerender(
+      <main>
+        <FileUploader
+          items={[converting]}
+          accept=".mp4"
+          maxSize={MB}
+          maxFiles={5}
+          onFilesSelected={vi.fn()}
+          onRemove={vi.fn()}
+          onRetry={vi.fn()}
+        />
+      </main>
+    );
+
+    expect(screen.getByRole('status', { name: 'Convertendo…' })).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Verificando…' })).not.toBeInTheDocument();
+    expect(screen.getByText('aula-1.mp4: Convertendo…')).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('hides the retry of an error that is not retryable and keeps the remove', async () => {
+    const user = userEvent.setup();
+    const { onRemove } = setup({
+      items: [
+        {
+          id: 'c',
+          name: 'aula-3.mp4',
+          sizeBytes: MB,
+          status: 'error',
+          error: 'A conversão falhou.',
+          retryable: false,
+        },
+      ],
+    });
+
+    expect(screen.getByText('A conversão falhou.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Tentar de novo/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Remover aula-3.mp4' }));
+    expect(onRemove).toHaveBeenCalledWith('c');
+  });
+
   it('shows an indeterminate bar without progress, clamps the value and has a default error', () => {
     setup({
       items: [
@@ -418,7 +468,25 @@ describe('FileUploader', () => {
       <main>
         <FileUploader
           aria-label="Vídeos do curso"
-          items={[...ITEMS, { id: 'd', name: 'aula-4.mp4', sizeBytes: MB, status: 'processing' }]}
+          items={[
+            ...ITEMS,
+            { id: 'd', name: 'aula-4.mp4', sizeBytes: MB, status: 'processing' },
+            {
+              id: 'e',
+              name: 'aula-5.mp4',
+              sizeBytes: MB,
+              status: 'processing',
+              processingLabel: 'Convertendo…',
+            },
+            {
+              id: 'f',
+              name: 'aula-6.mp4',
+              sizeBytes: MB,
+              status: 'error',
+              error: 'A conversão falhou.',
+              retryable: false,
+            },
+          ]}
           accept=".mp4"
           maxSize={500 * MB}
           maxFiles={10}
