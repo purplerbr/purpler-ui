@@ -76,6 +76,10 @@
       "types": "./dist/atoms/Text/index.d.ts",
       "import": "./dist/atoms/Text/index.js"
     },
+    "./textarea": {
+      "types": "./dist/atoms/Textarea/index.d.ts",
+      "import": "./dist/atoms/Textarea/index.js"
+    },
     "./accordion": {
       "types": "./dist/molecules/Accordion/index.d.ts",
       "import": "./dist/molecules/Accordion/index.js"

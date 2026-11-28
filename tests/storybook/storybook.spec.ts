@@ -22,6 +22,7 @@ const BUTTON_STORIES = [
 const FORM_STORIES = [
   'atoms-checkbox--all-variants',
   'atoms-input--all-variants',
+  'atoms-textarea--all-variants',
   'atoms-label--all-variants',
   'atoms-radiogroup--all-variants',
   'molecules-formfield--all-variants',
@@ -1091,6 +1092,7 @@ for (const id of [
   'organisms-pricingtable--default',
   'organisms-pricingcard--all-variants',
   'molecules-formfield--all-variants',
+  'atoms-textarea--all-variants',
   'molecules-select--all-variants',
   'atoms-radiogroup--all-variants',
   'organisms-datatable--with-filters',
@@ -1170,6 +1172,29 @@ test('a disabled input is skipped by Tab', async ({ page, browserName }) => {
 
   await expect(page.getByRole('textbox', { name: 'Nome da loja' })).not.toBeFocused();
   await expect(page.getByRole('textbox', { name: 'Nome da loja' })).toBeDisabled();
+});
+
+test('the textarea takes Tab, shows the focus outline and grows with the text up to a scroll', async ({
+  page,
+  browserName,
+}) => {
+  await openStory(page, 'atoms-textarea--default', 'scheme:light');
+  const textarea = page.getByRole('textbox', { name: 'Política de trocas e devoluções' });
+  const height = () => textarea.evaluate((element) => element.getBoundingClientRect().height);
+
+  await page.keyboard.press(tabKey(browserName));
+  await expect(textarea).toBeFocused();
+  expect(await outlineOf(textarea)).toEqual({ style: 'solid', width: '2px' });
+  const empty = await height();
+  // 6 rows of 24 px, plus the padding and the border.
+  expect(empty).toBe(162);
+  await textarea.fill('Até 7 dias.\n'.repeat(30));
+
+  expect(await height()).toBeGreaterThan(empty);
+  expect(await height()).toBeLessThanOrEqual(384);
+  expect(await textarea.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
+    true
+  );
 });
 
 test('submitting the form with errors focuses the first field and links each message', async ({
