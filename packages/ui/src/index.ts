@@ -143,6 +143,19 @@ export type {
   TableUrlStateConfig,
 } from './organisms/DataTable';
 export {
+  FileUploader,
+  fileUploaderDropzoneVariants,
+  fileUploaderListVariants,
+  fileUploaderProgressVariants,
+  fileUploaderRowVariants,
+  fileUploaderVariants,
+} from './organisms/FileUploader';
+export type {
+  FileUploaderItem,
+  FileUploaderProps,
+  FileUploaderStatus,
+} from './organisms/FileUploader';
+export {
   ImageUploader,
   imageUploaderDropzoneVariants,
   imageUploaderListVariants,

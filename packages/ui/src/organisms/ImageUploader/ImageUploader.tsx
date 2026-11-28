@@ -13,6 +13,7 @@ import { Badge } from '../../atoms/Badge/Badge';
 import { Button } from '../../atoms/Button/Button';
 import { Spinner } from '../../atoms/Spinner/Spinner';
 import { cn } from '../../utils/cn';
+import { formatFileSize, formatTypes, matchesAccept, moved, plural } from '../../utils/files';
 import {
   imageUploaderDropzoneVariants,
   imageUploaderListVariants,
@@ -51,40 +52,6 @@ export type ImageUploaderProps = Omit<ComponentProps<'div'>, 'children'> & {
 
 type PendingFocus = { id: string; move: 'left' | 'right' } | 'dropzone' | null;
 
-const MB = 1024 * 1024;
-const sizeFormat = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
-const listFormat = new Intl.ListFormat('pt-BR', { type: 'disjunction' });
-
-function formatTypes(accept: string): string {
-  const names = accept.split(',').map((type) =>
-    type
-      .trim()
-      .replace(/^\.|^.*\//, '')
-      .toUpperCase()
-  );
-  return listFormat.format(names);
-}
-
-function matchesAccept(file: File, accept: string): boolean {
-  return accept.split(',').some((raw) => {
-    const type = raw.trim().toLowerCase();
-    if (type.startsWith('.')) return file.name.toLowerCase().endsWith(type);
-    if (type.endsWith('/*')) return file.type.startsWith(type.slice(0, -1));
-    return file.type === type;
-  });
-}
-
-function plural(count: number, one: string, many: string): string {
-  return `${String(count)} ${count === 1 ? one : many}`;
-}
-
-function moved<T>(list: readonly T[], from: number, to: number): T[] {
-  const next = [...list];
-  const [item] = next.splice(from, 1);
-  if (item !== undefined) next.splice(to, 0, item);
-  return next;
-}
-
 /** Image list with drop zone, progress, retry and reorder; the app does the upload. */
 export function ImageUploader({
   className,
@@ -110,7 +77,7 @@ export function ImageUploader({
   const [announcement, setAnnouncement] = useState('');
 
   const types = formatTypes(accept);
-  const size = `${sizeFormat.format(maxSize / MB)} MB`;
+  const size = formatFileSize(maxSize);
   const full = images.length >= maxFiles;
 
   // React moves reordered nodes, which drops their focus; put it back on the control that was used.

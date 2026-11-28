@@ -75,6 +75,7 @@ const DASHBOARD_STORIES = [
   'templates-dashboardlayout--store-loading',
   'templates-dashboardlayout--long-store-name',
   'organisms-imageuploader--all-variants',
+  'organisms-fileuploader--all-variants',
 ] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -1094,6 +1095,7 @@ for (const id of [
   'atoms-radiogroup--all-variants',
   'organisms-datatable--with-filters',
   'organisms-imageuploader--all-variants',
+  'organisms-fileuploader--all-variants',
 ]) {
   test(`${id} at a true 360px, without the story padding, has no page horizontal scroll`, async ({
     page,

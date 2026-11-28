@@ -120,6 +120,10 @@
       "types": "./dist/organisms/DataTable/index.d.ts",
       "import": "./dist/organisms/DataTable/index.js"
     },
+    "./file-uploader": {
+      "types": "./dist/organisms/FileUploader/index.d.ts",
+      "import": "./dist/organisms/FileUploader/index.js"
+    },
     "./image-uploader": {
       "types": "./dist/organisms/ImageUploader/index.d.ts",
       "import": "./dist/organisms/ImageUploader/index.js"
