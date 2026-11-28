@@ -1,5 +1,11 @@
 # @purplerbr/ui
 
+## 0.14.0
+
+### Minor Changes
+
+- 516e2f6: `FileUploader` items take two optional props: `processingLabel` replaces "Verificando…" while the item is processing (and in its announcement), and `retryable: false` hides "Tentar de novo" on an error that only a new file fixes, keeping the remove button. Without them, nothing changes.
+
 ## 0.13.0
 
 ### Minor Changes
