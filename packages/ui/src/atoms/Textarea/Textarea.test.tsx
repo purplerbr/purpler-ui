@@ -44,6 +44,27 @@ describe('Textarea', () => {
     expect(privacy).toHaveValue('Dados');
   });
 
+  it('sets the rows variable for the min height and keeps the caller style and class', () => {
+    render(
+      <>
+        <Textarea aria-label="Política de trocas" />
+        <Textarea
+          aria-label="Política de privacidade"
+          rows={3}
+          className="col-span-2"
+          style={{ marginTop: '4px' }}
+        />
+      </>
+    );
+    const exchange = screen.getByRole('textbox', { name: 'Política de trocas' });
+    const privacy = screen.getByRole('textbox', { name: 'Política de privacidade' });
+
+    expect(exchange.style.getPropertyValue('--textarea-rows')).toBe('6');
+    expect(privacy.style.getPropertyValue('--textarea-rows')).toBe('3');
+    expect(privacy.style.marginTop).toBe('4px');
+    expect(privacy).toHaveClass('col-span-2', 'field-sizing-content', 'max-h-96');
+  });
+
   it('does not take focus or text when disabled', async () => {
     const user = userEvent.setup();
     render(<Textarea aria-label="Política de trocas" disabled defaultValue="Até 7 dias" />);
