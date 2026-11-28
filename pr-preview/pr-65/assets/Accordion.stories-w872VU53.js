@@ -1,0 +1,15 @@
+import{n as e}from"./rolldown-runtime-sJBDdmOt.js";import{t}from"./jsx-runtime-MKhVqBIO.js";import{a as n,i as r,n as i,r as a,t as o}from"./Accordion-5QQWku6Q.js";function s({name:e,openFirst:t=!1,...n}){return(0,c.jsx)(o,{...n,children:l.map(({question:n,answer:o},s)=>(0,c.jsxs)(a,{name:e,open:t&&s===0,children:[(0,c.jsx)(r,{children:n}),(0,c.jsx)(i,{children:o})]},n))})}var c,l,u,d,f,p,m,h;function g(){return(g=e((()=>{n(),c=t(),l=[{question:`Preciso ter CNPJ para abrir minha loja?`,answer:`Não. Você pode começar com CPF e passar para CNPJ quando quiser. Os meios de pagamento pedem os seus dados direto, na conta que você conectar.`},{question:`O dinheiro das vendas cai na minha conta?`,answer:`Cai, sim. Cada venda é feita com a sua conta do Mercado Pago, PayPal ou Pagar.me, e o valor vai direto para ela. A Purpler cobra só a assinatura do plano.`},{question:`Posso usar o domínio da minha marca?`,answer:`Pode. Aponte o seu domínio, como www.minhaloja.com.br, e a loja passa a abrir nele. Até lá, ela fica no endereço padrão da Purpler.`}],u={title:`Molecules/Accordion`,component:o,tags:[`autodocs`],args:{className:`max-w-2xl`},argTypes:{className:{control:`text`,description:`Só layout (largura, margem)`}},parameters:{docs:{description:{component:"Perguntas e respostas que abrem e fecham. É feito com `<details>` e `<summary>` nativos: funciona sem JavaScript, então a página pré-renderizada continua legível e o conteúdo fechado continua no HTML para o SEO. `open` num item começa aberto; o mesmo `name` em vários itens deixa só um aberto por vez. Não coloque heading dentro do `AccordionTrigger`: o leitor de tela trata o resumo como botão e perde o heading."}}},render:e=>(0,c.jsx)(s,{...e})},d={},f={render:e=>(0,c.jsx)(s,{...e,openFirst:!0})},p={render:e=>(0,c.jsx)(s,{...e,name:`faq`})},m={parameters:{controls:{disable:!0}},render:()=>(0,c.jsxs)(`div`,{className:`grid max-w-2xl gap-10`,children:[(0,c.jsx)(s,{}),(0,c.jsx)(s,{openFirst:!0})]})},h=[`Default`,`FirstOpen`,`OneAtATime`,`AllVariants`],d.parameters={...d.parameters,docs:{...d.parameters?.docs,source:{originalSource:`{}`,...d.parameters?.docs?.source}}},f.parameters={...f.parameters,docs:{...f.parameters?.docs,source:{originalSource:`{
+  render: args => <Faq {...args} openFirst />
+}`,...f.parameters?.docs?.source}}},p.parameters={...p.parameters,docs:{...p.parameters?.docs,source:{originalSource:`{
+  render: args => <Faq {...args} name="faq" />
+}`,...p.parameters?.docs?.source},description:{story:"Items sharing a `name` close the others when one opens (native exclusive accordion).",...p.parameters?.docs?.description}}},m.parameters={...m.parameters,docs:{...m.parameters?.docs,source:{originalSource:`{
+  parameters: {
+    controls: {
+      disable: true
+    }
+  },
+  render: () => <div className="grid max-w-2xl gap-10">
+      <Faq />
+      <Faq openFirst />
+    </div>
+}`,...m.parameters?.docs?.source}}}})))()}g();export{m as AllVariants,d as Default,f as FirstOpen,p as OneAtATime,h as __namedExportsOrder,u as default};
