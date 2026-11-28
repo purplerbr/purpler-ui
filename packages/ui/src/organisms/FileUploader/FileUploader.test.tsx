@@ -264,6 +264,38 @@ describe('FileUploader', () => {
     expect(screen.getByText('aula-1.mp4: não foi possível enviar.')).toBeInTheDocument();
   });
 
+  it('does not announce a retry going back to uploading', () => {
+    const failed: FileUploaderItem = { id: 'c', name: 'c.mp4', sizeBytes: MB, status: 'error' };
+    const { rerender } = setup({ items: [{ ...failed, status: 'uploading' }] });
+    const show = (items: FileUploaderItem[]) => {
+      rerender(
+        <main>
+          <FileUploader
+            items={items}
+            accept=".mp4"
+            maxSize={MB}
+            maxFiles={5}
+            onFilesSelected={vi.fn()}
+            onRemove={vi.fn()}
+            onRetry={vi.fn()}
+          />
+        </main>
+      );
+    };
+
+    show([failed]);
+    expect(screen.getByText('c.mp4: não foi possível enviar.')).toHaveAttribute(
+      'aria-live',
+      'polite'
+    );
+
+    show([{ ...failed, status: 'uploading', progress: 10 }]);
+    expect(screen.getByText('c.mp4: não foi possível enviar.')).toHaveAttribute(
+      'aria-live',
+      'polite'
+    );
+  });
+
   it('hides the move controls when onReorder is not given', () => {
     setup();
 
