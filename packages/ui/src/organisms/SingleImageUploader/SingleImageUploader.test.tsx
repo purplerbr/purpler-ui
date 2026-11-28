@@ -157,6 +157,35 @@ describe('SingleImageUploader', () => {
     expect(onFileSelected).toHaveBeenCalledWith(logo);
   });
 
+  it('ignores drags and drops without files and names an image without alt', () => {
+    const { onFileSelected } = setup({ image: { ...LOGO, alt: '' } });
+    const group = screen.getByRole('group', { name: 'Logo da loja' });
+
+    expect(screen.getByRole('img', { name: 'Imagem atual' })).toBeInTheDocument();
+    fireEvent.dragOver(group, { dataTransfer: { types: ['text/plain'] } });
+    expect(group).toHaveAttribute('data-dragging', 'false');
+    fireEvent.dragOver(group, { dataTransfer: { types: ['Files'] } });
+    expect(group).toHaveAttribute('data-dragging', 'true');
+    fireEvent.drop(group, { dataTransfer: { types: ['Files'], files: [] } });
+
+    expect(group).toHaveAttribute('data-dragging', 'false');
+    expect(onFileSelected).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('clears a refusal once a valid file is picked', async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    const { input, onFileSelected } = setup();
+    const logo = file('logo.png', 'image/png');
+
+    await user.upload(input, file('logo.gif', 'image/gif'));
+    expect(screen.getByRole('alert')).toHaveTextContent('logo.gif: tipo não aceito.');
+    await user.upload(input, logo);
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(onFileSelected).toHaveBeenCalledWith(logo);
+  });
+
   it('shows the progress, the processing state and the error with retry', async () => {
     const user = userEvent.setup();
     const { rerender, onRetry } = setup({ image: { ...LOGO, status: 'uploading', progress: 40 } });
