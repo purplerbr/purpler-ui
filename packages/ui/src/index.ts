@@ -39,6 +39,8 @@ export { Spinner, spinnerLabelVariants, spinnerVariants } from './atoms/Spinner'
 export type { SpinnerProps, SpinnerVariants } from './atoms/Spinner';
 export { Text, textVariants } from './atoms/Text';
 export type { TextElement, TextProps, TextVariants } from './atoms/Text';
+export { Textarea, textareaVariants } from './atoms/Textarea';
+export type { TextareaProps } from './atoms/Textarea';
 export {
   Accordion,
   AccordionContent,
