@@ -32,6 +32,10 @@ export type FileUploaderItem = {
   /** Upload progress from 0 to 100; without it the bar is indeterminate. */
   progress?: number | undefined;
   error?: string | undefined;
+  /** Shown while processing; defaults to "Verificando…". */
+  processingLabel?: string | undefined;
+  /** False hides "Tentar de novo" on an error that only a new file fixes; remove stays. */
+  retryable?: boolean | undefined;
 };
 
 export type FileUploaderProps = Omit<ComponentProps<'div'>, 'children' | 'title'> & {
@@ -57,7 +61,10 @@ export type FileUploaderProps = Omit<ComponentProps<'div'>, 'children' | 'title'
 type PendingFocus = { id: string; move: 'up' | 'down' } | 'dropzone' | null;
 
 function statusMessage(item: FileUploaderItem): string {
-  if (item.status === 'processing') return `Verificando ${item.name}…`;
+  if (item.status === 'processing')
+    return item.processingLabel === undefined
+      ? `Verificando ${item.name}…`
+      : `${item.name}: ${item.processingLabel}`;
   if (item.status === 'ready') return `${item.name} enviado.`;
   if (item.status === 'error') return `${item.name}: ${item.error ?? 'não foi possível enviar.'}`;
   return '';
@@ -380,7 +387,14 @@ function ItemStatus({ item, onRetry }: ItemStatusProps) {
     );
   }
   if (item.status === 'processing')
-    return <Spinner size="sm" label="Verificando…" showLabel className="text-muted-foreground" />;
+    return (
+      <Spinner
+        size="sm"
+        label={item.processingLabel ?? 'Verificando…'}
+        showLabel
+        className="text-muted-foreground"
+      />
+    );
   if (item.status === 'error')
     return (
       // No role="alert" here: the polite live region of the uploader already announces it.
@@ -388,16 +402,18 @@ function ItemStatus({ item, onRetry }: ItemStatusProps) {
         <p className="text-small font-semibold text-destructive">
           {item.error ?? 'Não foi possível enviar.'}
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          aria-label={`Tentar de novo: ${item.name}`}
-          onClick={() => {
-            onRetry(item.id);
-          }}
-        >
-          Tentar de novo
-        </Button>
+        {item.retryable !== false && (
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={`Tentar de novo: ${item.name}`}
+            onClick={() => {
+              onRetry(item.id);
+            }}
+          >
+            Tentar de novo
+          </Button>
+        )}
       </div>
     );
   return (
