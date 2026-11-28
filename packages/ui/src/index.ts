@@ -195,6 +195,13 @@ export type {
   PricingTableProps,
   PricingTableRow,
 } from './organisms/PricingTable';
+export {
+  SingleImageUploader,
+  singleImageUploaderImageVariants,
+  singleImageUploaderPreviewVariants,
+  singleImageUploaderVariants,
+} from './organisms/SingleImageUploader';
+export type { SingleImageUploaderProps } from './organisms/SingleImageUploader';
 export { AuthLayout, authLayoutVariants } from './templates/AuthLayout';
 export type { AuthLayoutProps } from './templates/AuthLayout';
 export {

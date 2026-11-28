@@ -327,7 +327,7 @@ type ImageStatusProps = {
   onRetry: (id: string) => void;
 };
 
-function ImageStatus({ image, name, onRetry }: ImageStatusProps) {
+export function ImageStatus({ image, name, onRetry }: ImageStatusProps) {
   if (image.status === 'uploading') {
     const value =
       image.progress === undefined ? null : Math.min(100, Math.max(0, Math.round(image.progress)));

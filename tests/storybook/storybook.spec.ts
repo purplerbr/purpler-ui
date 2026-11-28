@@ -77,6 +77,7 @@ const DASHBOARD_STORIES = [
   'templates-dashboardlayout--long-store-name',
   'organisms-imageuploader--all-variants',
   'organisms-fileuploader--all-variants',
+  'organisms-singleimageuploader--all-variants',
 ] as const;
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -1098,6 +1099,7 @@ for (const id of [
   'organisms-datatable--with-filters',
   'organisms-imageuploader--all-variants',
   'organisms-fileuploader--all-variants',
+  'organisms-singleimageuploader--all-variants',
 ]) {
   test(`${id} at a true 360px, without the story padding, has no page horizontal scroll`, async ({
     page,
@@ -1946,6 +1948,52 @@ test('the image uploader takes files, shows the progress, retries and reorders b
 
   await page.getByRole('button', { name: 'Tentar de novo: imagem 2' }).click();
   await expect(page.getByRole('progressbar', { name: 'Enviando imagem 2' })).toBeVisible();
+});
+test('the single image uploader adds, refuses, retries, replaces by drop and removes', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openStory(page, 'organisms-singleimageuploader--simulated-upload', 'scheme:light');
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64'
+  );
+  const input = page.locator('input[type="file"]');
+
+  await input.setInputFiles({
+    name: 'logo.svg',
+    mimeType: 'image/svg+xml',
+    buffer: Buffer.from('<svg/>'),
+  });
+  await expect(page.getByRole('alert')).toHaveText(
+    'logo.svg: tipo não aceito. Envie JPEG, PNG ou WEBP.'
+  );
+  await input.setInputFiles({ name: 'logo-erro.png', mimeType: 'image/png', buffer: png });
+  await expect(page.getByRole('progressbar', { name: 'Enviando imagem' })).toBeVisible();
+  const retry = page.getByRole('button', { name: 'Tentar de novo: imagem' });
+  await expect(retry).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Imagem atual' })).toBeVisible();
+  await expectNoAxeViolations(page);
+  await retry.click();
+  await expect(page.getByRole('progressbar', { name: 'Enviando imagem' })).toBeVisible();
+
+  const transfer = await page.evaluateHandle(
+    (bytes) => {
+      const data = new DataTransfer();
+      data.items.add(new File([new Uint8Array(bytes)], 'logo-novo.png', { type: 'image/png' }));
+      return data;
+    },
+    [...png]
+  );
+  await page.getByRole('group', { name: 'Logo da loja' }).dispatchEvent('drop', {
+    dataTransfer: transfer,
+  });
+  await expect(page.getByText('Imagem trocada.')).toBeAttached();
+  await expect(page.getByRole('button', { name: 'Trocar' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Remover' }).click();
+  await expect(page.getByText('Imagem removida.')).toBeAttached();
+  await expect(page.getByRole('button', { name: /^Adicionar imagem/ })).toBeFocused();
 });
 test('the file uploader takes files, shows the progress, retries, reorders and removes', async ({
   page,

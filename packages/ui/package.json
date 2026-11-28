@@ -148,6 +148,10 @@
       "types": "./dist/organisms/PricingTable/index.d.ts",
       "import": "./dist/organisms/PricingTable/index.js"
     },
+    "./single-image-uploader": {
+      "types": "./dist/organisms/SingleImageUploader/index.d.ts",
+      "import": "./dist/organisms/SingleImageUploader/index.js"
+    },
     "./auth-layout": {
       "types": "./dist/templates/AuthLayout/index.d.ts",
       "import": "./dist/templates/AuthLayout/index.js"
