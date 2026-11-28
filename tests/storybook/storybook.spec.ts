@@ -1922,3 +1922,52 @@ test('the image uploader takes files, shows the progress, retries and reorders b
   await page.getByRole('button', { name: 'Tentar de novo: imagem 2' }).click();
   await expect(page.getByRole('progressbar', { name: 'Enviando imagem 2' })).toBeVisible();
 });
+test('the file uploader takes files, shows the progress, retries, reorders and removes', async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openStory(page, 'organisms-fileuploader--simulated-upload', 'scheme:light');
+  const video = Buffer.from('mp4');
+  await page.locator('input[type="file"]').setInputFiles([
+    { name: 'aula-1.mp4', mimeType: 'video/mp4', buffer: video },
+    { name: 'aula-erro.mp4', mimeType: 'video/mp4', buffer: video },
+    { name: 'apostila.zip', mimeType: 'application/zip', buffer: video },
+  ]);
+
+  await expect(page.getByRole('alert').filter({ hasText: 'apostila.zip' })).toHaveText(
+    'apostila.zip: tipo não aceito. Envie MP4.'
+  );
+  await expect(page.getByRole('progressbar', { name: 'Enviando aula-1.mp4' })).toBeVisible();
+  const retry = page.getByRole('button', { name: 'Tentar de novo: aula-erro.mp4' });
+  await expect(retry).toBeVisible();
+  await expect(
+    page.getByText('Não conseguimos enviar. Tente de novo.', { exact: true })
+  ).toBeVisible();
+  await expect(page.getByText('Enviado', { exact: true })).toBeVisible();
+  await expectNoAxeViolations(page);
+
+  const rows = page
+    .getByRole('listitem')
+    .filter({ has: page.getByRole('button', { name: /^Remover/ }) });
+  await rows.nth(1).dragTo(rows.nth(0));
+  await expect(rows.nth(0)).toContainText('aula-erro.mp4');
+
+  await page.getByRole('button', { name: 'Mover aula-erro.mp4 para baixo' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(rows.nth(1)).toContainText('aula-erro.mp4');
+  await expect(page.getByRole('button', { name: 'Mover aula-erro.mp4 para cima' })).toBeFocused();
+  await expect(
+    page.getByText('Arquivo aula-erro.mp4 movido para a posição 2 de 2.')
+  ).toBeAttached();
+
+  await retry.click();
+  await expect(page.getByRole('progressbar', { name: 'Enviando aula-erro.mp4' })).toBeVisible();
+  await expect(page.getByText('Enviado', { exact: true })).toHaveCount(2);
+
+  await page.getByRole('button', { name: 'Remover aula-1.mp4' }).click();
+  await expect(rows).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Adicionar vídeos' })).toBeFocused();
+  await page.screenshot({
+    path: `test-results/screens/${info.project.name}/file-uploader-flow.png`,
+  });
+});
